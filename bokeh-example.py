@@ -13,7 +13,7 @@ plot.title.text = "Noord Brabant"
 #     https://developers.google.com/maps/documentation/javascript/get-api-key
 #
 # Replace the value below with your personal API key:
-plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
+plot.api_key = ""
 
 source = ColumnDataSource(
     data=dict(
