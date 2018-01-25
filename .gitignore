@@ -1,0 +1,7 @@
+# Data files should not be checked in
+data/
+figures/
+Back Up/
+
+# Jupyter files
+.ipynb_checkpoints
