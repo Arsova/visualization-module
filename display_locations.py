@@ -6,7 +6,6 @@ from collections import OrderedDict
 import bokeh.plotting as bk
 import pandas as pd
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
-bk.output_file("maps.html",  mode="cdn")
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven"
 
@@ -32,7 +31,7 @@ source = bk.ColumnDataSource(
     )
 )
 
-circle = Circle(x="lon", y="lat", size=15, fill_color="blue", fill_alpha=0.8, line_color=None)
+circle = Circle(x="lon", y="lat", size=12, fill_color="blue", fill_alpha=0.5, line_color=None)
 plot.add_glyph(source, circle)
 
 plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool(), BoxZoomTool(match_aspect=True), HoverTool(),
@@ -42,5 +41,5 @@ hover.tooltips = OrderedDict([
     ("(lat,lon)", "(@lat, @lon)"),
     ("Place", "@city")
 ])
-output_file("gmap_plot.html")
+output_file("figures/gmap_plot.html")
 bk.show(plot)
