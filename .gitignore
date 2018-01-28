@@ -2,6 +2,9 @@
 data/
 figures/
 Back Up/
+my_files/
 
 # Jupyter files
 .ipynb_checkpoints
+
+examples/grondwatermeetpunten\.csv
