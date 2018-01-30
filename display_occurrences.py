@@ -12,20 +12,8 @@ from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
 
-map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
-plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
-plot.title.text = "Eindhoven"
-
-
-
-# For GMaps to function, Google requires you obtain and enable an API key:
-#
-#     https://developers.google.com/maps/documentation/javascript/get-api-key
-#
-# Replace the value below with your personal API key:
-plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
-
-df = pd.read_csv('data/limited_occ_with_gps.csv', delimiter=';')
+# limited_occ_with_gps_new.csv (replace / with -)
+df = pd.read_csv('data/limited_occ_with_gps_new.csv', delimiter=';')
 
 lat=list(df['Latitude'])
 lon=list(df['Longitude'])
@@ -33,8 +21,18 @@ city=list(df['Address'])
 issue=list(df['Hoofdtype Melding'])
 user=list(df['Verbruiker Omschr'])
 dates=list(df['Datum'])
-dates = convert_to_date(dates)
-print(dates)
+# dates = convert_to_date(dates)
+
+source_original = bk.ColumnDataSource(
+    data=dict(
+        lat=lat,
+        lon=lon,
+        city=city,
+        issue=issue,
+        dates=dates
+    )
+)
+
 source = bk.ColumnDataSource(
     data=dict(
         lat=lat,
@@ -45,8 +43,33 @@ source = bk.ColumnDataSource(
     )
 )
 
-triangle = Triangle(x="lon", y="lat", SOUsize=12, fill_color="red", fill_alpha=0.5, line_color=None)
+#create filtering function
+def filter_grades(attr,old,new):
+    # print('value 0: ', slider.value[0])
+    # print('value 1: ', slider.value[1])
+    val0 = str(slider.value[0])
+    val0 = val0[:-3]
+    val0 = date.fromtimestamp(int(val0))
+    val1 = str(slider.value[1])
+    val1 = val1[:-3]
+    val1 = date.fromtimestamp(int(val1))
+    source.data={key:[value for i, value in enumerate(source_original.data[key])
+    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
+    for key in source_original.data}
+
+slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
+step=1)
+slider.on_change("value", filter_grades)
+
+map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
+plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
+plot.title.text = "Eindhoven city"
+plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
+
+triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None)
 plot.add_glyph(source, triangle)
+
+# plot.update()
 
 plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool(), BoxZoomTool(match_aspect=True), HoverTool(),
 	    ResetTool())
@@ -57,33 +80,6 @@ hover.tooltips = OrderedDict([
     ("Date", "@dates"),
     ("Problem", "@issue")
 ])
-
-def callback(source=source, window=None):
-    data = source.data
-    f1 = cb_obj.value[0]
-    f2 = cb_obj.value[1]
-    print(f1)
-    print(f2)
-    lat, lon, city, issue, dates = data['lat'], data['lon'], data['city'], data['issue'], data['dates']
-    lat_new = []
-    lon_new = []
-    city_new = []
-    issue_new = []
-    dates_new = []
-    for i in range(len(lat)):
-        if dates[i] >= f1 and dates[i] <= f2:
-            lat_new.append(lat[i])
-            lon_new.append(lon[i])
-            city_new.append(city[i])
-            issue_new.append(issue[i])
-            dates_new.append(dates[i])
-    lat, lon, city, issue, dates = lat_new, lon_new, city_new, issue_new, dates_new
-    source.change.emit()
-
-slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)), \
-step=1, callback=CustomJS.from_py_func(callback))
-
+# output_file("figures/gmap_plot.html")
 layout = column(slider, plot)
-output_file("figures/gmap_plot.html")
-bk.show(layout)
-# curdoc().add_root(layout)
+curdoc().add_root(layout)
