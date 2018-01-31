@@ -44,7 +44,7 @@ source = bk.ColumnDataSource(
 )
 
 #create filtering function
-def filter_grades(attr,old,new):
+def filter_occurrences(attr,old,new):
     # print('value 0: ', slider.value[0])
     # print('value 1: ', slider.value[1])
     val0 = str(slider.value[0])
@@ -59,7 +59,7 @@ def filter_grades(attr,old,new):
 
 slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
 step=1)
-slider.on_change("value", filter_grades)
+slider.on_change("value", filter_occurrences)
 
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
