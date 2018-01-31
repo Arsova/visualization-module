@@ -8,3 +8,5 @@ my_files/
 .ipynb_checkpoints
 
 examples/grondwatermeetpunten\.csv
+
+__pycache__/
