@@ -1,7 +1,7 @@
 from bokeh.io import output_file, show
 from bokeh.models import (
 GMapPlot, GMapOptions, CustomJS, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, BoxSelectTool, BoxZoomTool, HoverTool,
-ResetTool, Legend, LegendItem)
+ResetTool, Legend, LegendItem,LassoSelectTool)
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
 import bokeh.plotting as bk
@@ -11,7 +11,7 @@ from bokeh.models.widgets import DateRangeSlider
 from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
-
+from bokeh.transform import linear_cmap
 df1 = pd.read_csv('data/coordinates-codes.csv', delimiter=';', header=0)
 
 # limited_occ_with_gps_new.csv (replace / with -)
@@ -30,7 +30,7 @@ lon_elog=list(df1['Lon'])
 place_elog=list(df1['Place'])
 location_elog=list(df1['Location'])
 zipcode_elog=list(df1['Zipcode'])
-
+value_elog = return_value_list(locations=location_elog)
 
 
 
@@ -40,7 +40,19 @@ source_elog_original = bk.ColumnDataSource(
         lon_elog=lon_elog,
         place_elog=place_elog,
         location_elog=location_elog,
-        zipcode_elog=zipcode_elog
+        zipcode_elog=zipcode_elog,
+        value_elog = value_elog
+    )
+)
+
+source_elog = bk.ColumnDataSource(
+    data=dict(
+        lat_elog=lat_elog,
+        lon_elog=lon_elog,
+        place_elog=place_elog,
+        location_elog=location_elog,
+        zipcode_elog=zipcode_elog,
+        value_elog = value_elog
     )
 )
 
@@ -66,8 +78,6 @@ source = bk.ColumnDataSource(
 
 #create filtering function
 def filter_occurrences(attr,old,new):
-    # print('value 0: ', slider.value[0])
-    # print('value 1: ', slider.value[1])
     val0 = str(slider.value[0])
     val0 = val0[:-3]
     val0 = date.fromtimestamp(int(val0))
@@ -77,6 +87,7 @@ def filter_occurrences(attr,old,new):
     source.data={key:[value for i, value in enumerate(source_original.data[key])
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
     for key in source_original.data}
+    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
 
 slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
 step=1)
@@ -90,20 +101,15 @@ plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
 triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
 glyph_triangle = plot.add_glyph(source, triangle)
 
-circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color="blue", fill_alpha=0.5, line_color=None, name="elog locations")
-glyph_circle = plot.add_glyph(source_elog_original, circle)
+circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=linear_cmap("value_elog",
+palette = ['#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"])),
+fill_alpha=0.5, line_color=None, name="elog locations")
 
-# plot.update()
+glyph_circle = plot.add_glyph(source_elog, circle)
 
 plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool(), BoxZoomTool(match_aspect=True),
-	    ResetTool())
-# hover = plot.select(dict(type=HoverTool))
-# hover.tooltips = OrderedDict([
-#     ("(lat,lon)", "(@lat, @lon)"),
-#     ("Place", "@city"),
-#     ("Date", "@dates"),
-#     ("Problem", "@issue")
-# ])
+	    ResetTool(), LassoSelectTool())
 
 triangle_hover = HoverTool(renderers=[glyph_triangle],
                          tooltips=OrderedDict([
