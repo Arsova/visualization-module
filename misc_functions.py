@@ -51,6 +51,7 @@ def get_color(value):
         else:
             return '#08306b'
 
+# returns new aggregaate consumption values
 def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     value_list = []
     start = convert_to_date_reverse(start)

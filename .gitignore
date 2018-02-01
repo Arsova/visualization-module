@@ -10,3 +10,5 @@ my_files/
 examples/grondwatermeetpunten\.csv
 
 __pycache__/
+
+check_file_from_santi\.py
