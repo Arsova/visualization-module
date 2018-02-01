@@ -64,7 +64,7 @@ slider.on_change("value", filter_occurrences)
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven city"
-plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
+plot.api_key = ""
 
 triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None)
 plot.add_glyph(source, triangle)

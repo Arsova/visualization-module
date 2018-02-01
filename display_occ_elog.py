@@ -127,7 +127,7 @@ plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven"
 
 # use your api key below
-plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
+plot.api_key = ""
 
 # triangle glyphs on the map
 triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=0.5, line_color=None, name="occurrences")
