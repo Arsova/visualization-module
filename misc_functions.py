@@ -57,10 +57,12 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     end = convert_to_date_reverse(end)
     df = pd.read_csv('data/aggregated_day_total_positive.csv')
     df['norm_date'] = df.apply(lambda row: convert_to_date_reverse(row['norm_date']), axis=1)
-    df = df[df['norm_date'] >= start]
-    df = df[df['norm_date'] <= end]
+    df = df.loc[(df['norm_date'] >= start) & (df['norm_date'] <= end)]
     for loc in locations:
         df_temp = df[df['location']==int(loc)]
-        consumption = df_temp['delta_total'].sum()
-        value_list.append(consumption)
+        if len(df_temp) == 0:
+            value_list.append(0)
+        else:
+            consumption = df_temp['delta_total'].sum()
+            value_list.append(consumption)
     return value_list

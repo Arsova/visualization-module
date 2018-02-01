@@ -1,12 +1,13 @@
 from bokeh.io import output_file, show
 from bokeh.models import (
-GMapPlot, GMapOptions, CustomJS, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, BoxSelectTool, BoxZoomTool, HoverTool,
+GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, BoxSelectTool, BoxZoomTool, HoverTool,
 ResetTool, Legend, LegendItem,LassoSelectTool)
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
 import bokeh.plotting as bk
 import pandas as pd
 from datetime import date, datetime
+from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import DateRangeSlider
 from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
@@ -32,6 +33,25 @@ location_elog=list(df1['Location'])
 zipcode_elog=list(df1['Zipcode'])
 value_elog = return_value_list(locations=location_elog)
 
+
+#create filtering function
+def filter_occurrences(attr,old,new):
+    # val0 = str(slider.value[0])
+    val0 = source_fake.data['value'][0][0]
+    print(val0)
+    val0 = str(val0)
+    val0 = str(val0[:-3])
+    val0 = date.fromtimestamp(int(val0))
+    # val1 = str(slider.value[1])
+    val1 = source_fake.data['value'][0][1]
+    print(val1)
+    val1=str(val1)
+    val1 = str(val1[:-3])
+    val1 = date.fromtimestamp(int(val1))
+    source.data={key:[value for i, value in enumerate(source_original.data[key])
+    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
+    for key in source_original.data}
+    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
 
 
 source_elog_original = bk.ColumnDataSource(
@@ -76,33 +96,28 @@ source = bk.ColumnDataSource(
     )
 )
 
-#create filtering function
-def filter_occurrences(attr,old,new):
-    val0 = str(slider.value[0])
-    val0 = val0[:-3]
-    val0 = date.fromtimestamp(int(val0))
-    val1 = str(slider.value[1])
-    val1 = val1[:-3]
-    val1 = date.fromtimestamp(int(val1))
-    source.data={key:[value for i, value in enumerate(source_original.data[key])
-    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
-    for key in source_original.data}
-    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
+# This data source is just used to communicate / trigger the real callback
+source_fake = ColumnDataSource(data=dict(value=[]))
+
 
 slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
-step=1)
-slider.on_change("value", filter_occurrences)
+step=1, callback_policy="mouseup")
+slider.callback = CustomJS(args=dict(source=source_fake), code="""
+    source.data = { value: [cb_obj.value] }
+""")
+# slider.on_change(data, filter_occurrences)
+source_fake.on_change('data', filter_occurrences)
 
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven city"
 plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
 
-triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
+triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=0.5, line_color=None, name="occurrences")
 glyph_triangle = plot.add_glyph(source, triangle)
 
 circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=linear_cmap("value_elog",
-palette = ['#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+palette = ['#807dba', '#6a51a3', '#54278f', '#3f007d'],
 low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"])),
 fill_alpha=0.5, line_color=None, name="elog locations")
 
@@ -133,3 +148,4 @@ plot.add_layout(legend, "center")
 # output_file("figures/gmap_plot.html")
 layout = column(slider, plot)
 curdoc().add_root(layout)
+curdoc().add_root(source_fake)
