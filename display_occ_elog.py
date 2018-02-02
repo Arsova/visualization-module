@@ -13,10 +13,10 @@ from bokeh.models.widgets import DateRangeSlider
 from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
-from bokeh.transform import linear_cmap
+from bokeh.transform import linear_cmap, log_cmap
 
 # read data files
-df1 = pd.read_csv('data/coordinates-codes.csv', delimiter=';', header=0)
+df1 = pd.read_csv('data/coordinates_codes_updated.csv', delimiter=';', header=0)
 # limited_occ_with_gps_new.csv (replace / with -)
 df2 = pd.read_csv('data/limited_occ_with_gps_new.csv', delimiter=';')
 
@@ -39,7 +39,7 @@ value_elog = return_value_list(locations=location_elog)
 
 
 # create filtering function, calls return_value_list() to get new consumption values
-def filter_occurrences(attr,old,new):
+def filter_usage(attr,old,new):
 
     #val1 and val2 are new slider values in timestamps
     # val0 = str(slider.value[0])
@@ -53,13 +53,26 @@ def filter_occurrences(attr,old,new):
     val1 = str(val1[:-3])
     val1 = date.fromtimestamp(int(val1))
 
+    # new consumption values for the elog locations
+    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
+
+def filter_occurrences(attr,old,new):
+
+    #val1 and val2 are new slider values in timestamps
+    # val0 = str(slider.value[0])
+    val0 = str(slider_events.value[0])
+    val0 = val0[:-3]
+    val0 = date.fromtimestamp(int(val0))
+    val1 = str(slider_events.value[1])
+    val1 = val1[:-3]
+    val1 = date.fromtimestamp(int(val1))
+    # print(val0)
+    # print(val1)
     # create new events source to display on map, controlled by slider
     source.data={key:[value for i, value in enumerate(source_original.data[key])
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
     for key in source_original.data}
 
-    # new consumption values for the elog locations
-    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
 
 # original data source for elog data
 source_elog_original = bk.ColumnDataSource(
@@ -111,7 +124,7 @@ source = bk.ColumnDataSource(
 source_fake = ColumnDataSource(data=dict(value=[]))
 
 # Define slider and callbacks
-slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
+slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)), title="Consumption period",
 step=1, callback_policy="mouseup")
 slider.callback = CustomJS(args=dict(source=source_fake), code="""
     source.data = { value: [cb_obj.value] }
@@ -119,7 +132,11 @@ slider.callback = CustomJS(args=dict(source=source_fake), code="""
 
 #change fake data source, which in turn triggers filter function to modify the real data
 # slider.on_change(data, filter_occurrences)
-source_fake.on_change('data', filter_occurrences)
+source_fake.on_change('data', filter_usage)
+
+slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
+step=1, title="Occurrence period")
+slider_events.on_change("value", filter_occurrences)
 
 # define maps, options
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
@@ -134,9 +151,9 @@ triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=
 glyph_triangle = plot.add_glyph(source, triangle)
 
 # circle glyphs on the map
-circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=linear_cmap("value_elog",
+circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
 palette = ['#807dba', '#6a51a3', '#54278f', '#3f007d'],
-low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"])),
+low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='black'),
 fill_alpha=0.5, line_color=None, name="elog locations")
 glyph_circle = plot.add_glyph(source_elog, circle)
 
@@ -169,6 +186,6 @@ plot.add_layout(legend, "center")
 
 # Add stuff to the app
 # output_file("figures/gmap_plot.html")
-layout = column(slider, plot)
+layout = column([slider, slider_events, plot])
 curdoc().add_root(layout)
 curdoc().add_root(source_fake)
