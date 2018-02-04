@@ -2,7 +2,7 @@
 from bokeh.io import output_file, show
 from bokeh.models import (
 GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, BoxSelectTool, BoxZoomTool, HoverTool,
-ResetTool, Legend, LegendItem,LassoSelectTool)
+ResetTool, Legend, LegendItem,LassoSelectTool, CheckboxGroup)
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
 import bokeh.plotting as bk
@@ -16,7 +16,7 @@ from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
 
 # read data files
-df1 = pd.read_csv('data/coordinates_codes_updated.csv', delimiter=';', header=0)
+df1 = pd.read_csv('data/coordinates-codes-updated.csv', delimiter=';')
 # limited_occ_with_gps_new.csv (replace / with -)
 df2 = pd.read_csv('data/limited_occ_with_gps_new.csv', delimiter=';')
 
@@ -28,6 +28,9 @@ issue=list(df2['Hoofdtype Melding'])
 user=list(df2['Verbruiker Omschr'])
 dates=list(df2['Datum'])
 # dates = convert_to_date(dates)
+occur_type = set(issue)
+occur_type = list(occur_type)
+occur_default = list(range(len(occur_type)))
 
 # get selected attribtes for elog
 lat_elog=list(df1['Lat'])
@@ -72,6 +75,15 @@ def filter_occurrences(attr,old,new):
     source.data={key:[value for i, value in enumerate(source_original.data[key])
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
     for key in source_original.data}
+
+def filter_event_type(attr,old,new):
+
+    possible_events = [occur_type[i] for i in checkbox_group.active]
+
+    source.data={key:[value for i, value in enumerate(source_original.data[key])
+    if source_original.data["issue"][i] in possible_events]
+    for key in source_original.data}
+    # print(checkbox_group.active)
 
 
 # original data source for elog data
@@ -138,6 +150,11 @@ slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), 
 step=1, title="Occurrence period")
 slider_events.on_change("value", filter_occurrences)
 
+checkbox_group = CheckboxGroup(
+        labels=occur_type, active=occur_default)
+
+checkbox_group.on_change("active", filter_event_type)
+
 # define maps, options
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
@@ -147,14 +164,14 @@ plot.title.text = "Eindhoven"
 plot.api_key = ""
 
 # triangle glyphs on the map
-triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=0.5, line_color=None, name="occurrences")
+triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=0.8, line_color=None, name="occurrences")
 glyph_triangle = plot.add_glyph(source, triangle)
 
 # circle glyphs on the map
 circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
-palette = ['#807dba', '#6a51a3', '#54278f', '#3f007d'],
-low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='black'),
-fill_alpha=0.5, line_color=None, name="elog locations")
+palette = ['#fa9fb5','#f768a1', '#dd3497', '#ae017e', '#7a0177', '#49006a'],
+low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
+fill_alpha=0.8, line_color=None, name="elog locations")
 glyph_circle = plot.add_glyph(source_elog, circle)
 
 # tools to include on the visualization
@@ -173,9 +190,12 @@ plot.add_tools(triangle_hover)
 # Hover tool for circles
 circle_hover = HoverTool(renderers=[glyph_circle],
                          tooltips=OrderedDict([
-                             ("Place", "@place_elog")
+                             ("Place", "@place_elog"),
+                             ("Usage", '@value_elog')
                          ]))
 plot.add_tools(circle_hover)
+
+
 
 # Add legend
 legend = Legend(items=[
@@ -186,6 +206,8 @@ plot.add_layout(legend, "center")
 
 # Add stuff to the app
 # output_file("figures/gmap_plot.html")
-layout = column([slider, slider_events, plot])
+row1 = row([slider, slider_events])
+row2 = row([plot, checkbox_group])
+layout = column([row1, row2])
 curdoc().add_root(layout)
 curdoc().add_root(source_fake)
