@@ -59,6 +59,7 @@ def filter_usage(attr,old,new):
     # new consumption values for the elog locations
     source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
 
+Function to filter occurrences based on slider and checkbox selection
 def filter_occurrences(attr,old,new):
 
     #val1 and val2 are new slider values in timestamps
@@ -69,23 +70,15 @@ def filter_occurrences(attr,old,new):
     val1 = str(slider_events.value[1])
     val1 = val1[:-3]
     val1 = date.fromtimestamp(int(val1))
-    # print(val0)
-    # print(val1)
+
+    # checkbox_group.active gives a list of indices corresponding to options selected using checkbox
     possible_events = [occur_type[i] for i in checkbox_group.active]
+
     # create new events source to display on map, controlled by slider
     source.data={key:[value for i, value in enumerate(source_original.data[key])
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
     and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
-
-# def filter_event_type(attr,old,new):
-#
-#     possible_events = [occur_type[i] for i in checkbox_group.active]
-#
-#     source.data={key:[value for i, value in enumerate(source_original.data[key])
-#     if source_original.data["issue"][i] in possible_events]
-#     for key in source_original.data}
-#     # print(checkbox_group.active)
 
 
 # original data source for elog data
@@ -163,7 +156,7 @@ plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven"
 
 # use your api key below
-plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
+plot.api_key = ""
 
 # triangle glyphs on the map
 triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
