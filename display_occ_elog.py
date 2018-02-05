@@ -71,19 +71,21 @@ def filter_occurrences(attr,old,new):
     val1 = date.fromtimestamp(int(val1))
     # print(val0)
     # print(val1)
+    possible_events = [occur_type[i] for i in checkbox_group.active]
     # create new events source to display on map, controlled by slider
     source.data={key:[value for i, value in enumerate(source_original.data[key])
-    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1]
+    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
+    and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
 
-def filter_event_type(attr,old,new):
-
-    possible_events = [occur_type[i] for i in checkbox_group.active]
-
-    source.data={key:[value for i, value in enumerate(source_original.data[key])
-    if source_original.data["issue"][i] in possible_events]
-    for key in source_original.data}
-    # print(checkbox_group.active)
+# def filter_event_type(attr,old,new):
+#
+#     possible_events = [occur_type[i] for i in checkbox_group.active]
+#
+#     source.data={key:[value for i, value in enumerate(source_original.data[key])
+#     if source_original.data["issue"][i] in possible_events]
+#     for key in source_original.data}
+#     # print(checkbox_group.active)
 
 
 # original data source for elog data
@@ -153,7 +155,7 @@ slider_events.on_change("value", filter_occurrences)
 checkbox_group = CheckboxGroup(
         labels=occur_type, active=occur_default)
 
-checkbox_group.on_change("active", filter_event_type)
+checkbox_group.on_change("active", filter_occurrences)
 
 # define maps, options
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
@@ -161,17 +163,17 @@ plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
 plot.title.text = "Eindhoven"
 
 # use your api key below
-plot.api_key = ""
+plot.api_key = "AIzaSyDxSgu79SAfdCxfdla-WYA-qPq7uERoP9M"
 
 # triangle glyphs on the map
-triangle = Triangle(x="lon", y="lat", size=12, fill_color="#fc4e2a", fill_alpha=0.8, line_color=None, name="occurrences")
+triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
 glyph_triangle = plot.add_glyph(source, triangle)
 
 # circle glyphs on the map
 circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
-palette = ['#fa9fb5','#f768a1', '#dd3497', '#ae017e', '#7a0177', '#49006a'],
+palette = ['#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'],
 low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
-fill_alpha=0.8, line_color=None, name="elog locations")
+fill_alpha=0.5, line_color=None, name="elog locations")
 glyph_circle = plot.add_glyph(source_elog, circle)
 
 # tools to include on the visualization
