@@ -5,6 +5,7 @@ Created on Mon Feb  5 16:48:27 2018
 @author: s157084
 """
 from elog_visualisations import *
+from display_occ_elog import *
 # imports
 from bokeh.io import output_file, show
 from bokeh.models import (
@@ -27,6 +28,8 @@ from bokeh.transform import linear_cmap, log_cmap
 data_aggregated = pd.read_csv('data/Data_heat_maps/aggregated_day/aggregated_day_total.csv')
 data_cc = pd.read_csv('data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
 p1, p2 = multiple_plot(1163208, data_aggregated, data_cc, plot_fig = False)
-layout = gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below')
- 
+map_layout = return_layout()
+
+heatmap_layout = gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below')
+layout=column([map_layout, heatmap_layout])
 curdoc().add_root(layout)
