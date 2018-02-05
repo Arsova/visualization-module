@@ -71,7 +71,7 @@ def pre_process_cc(data_cc, date_range):
     data_cc['date'] = pd.to_datetime(data_cc['Datum']).apply(lambda x: x.strftime('%Y-%m-%d')) 
     return data_cc
       
-def multiple_plot(location, data_aggregated, data_cc, window_size = 30):
+def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig = False):
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     #heat_map
     data = pre_process_hour_consuption(location)
@@ -178,13 +178,17 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30):
     p2.add_tools(circle_hover)
     p2.add_tools(p_line_1_hover)
     p2.add_tools(p_line_2_hover)
-
-    show(gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below'))
+    
+    if plot_fig:
+        show(gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below'))
+    
+    return p1, p2
     
     
 if __name__ == "__main__":
     data_aggregated = pd.read_csv('data/Data_heat_maps/aggregated_day/aggregated_day_total.csv')
     data_cc = pd.read_csv('data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
-    multiple_plot(1163208, data_aggregated, data_cc)
-    multiple_plot(1255365, data_aggregated, data_cc)
-    multiple_plot(1813229, data_aggregated, data_cc)
+    p1, p2 = multiple_plot(1163208, data_aggregated, data_cc, plot_fig = True)
+    #multiple_plot(1255365, data_aggregated, data_cc, plot_fig = True)
+    #multiple_plot(1813229, data_aggregated, data_cc, plot_fig = True)
+    
