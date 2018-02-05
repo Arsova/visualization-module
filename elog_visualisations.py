@@ -33,7 +33,7 @@ from bokeh.models import (
 
 from math import pi
 import sys
-
+pd.options.mode.chained_assignment = None
 
 def pre_process_hour_consuption(location):
     retrieve = str(location) + '.csv'
@@ -46,7 +46,8 @@ def pre_process_hour_consuption(location):
 
 def pre_process_total(data, location, window_size):
     data = data[data['location'] == location]
-    data['date'] = pd.to_datetime(data_aggregated['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
+    data.is_copy = False
+    data['date'] = pd.to_datetime(data['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
     data['delta_total'] = data['delta_total']/1000000
     sem = lambda x: x.std() / np.sqrt(x.size)
     rolling = data['delta_total'].rolling(window = window_size).agg({"y_mean": np.mean, "y_std": np.std, "y_sem": sem})
@@ -56,18 +57,18 @@ def pre_process_total(data, location, window_size):
     # Identify Outliers
     data['c'] = '#377eb8'
     data['c'][data['delta_total']>rolling['ub']] = '#d53e4f'
-
     data['s'] = 6
-    data['s'][data['delta_total']>rolling['ub']] = 8
+    data[data['delta_total']>rolling['ub']]['s'] = 8
     
     data['a'] = 0.4
-    data['a'][data['delta_total']>rolling['ub']] = 1
+    data[data['delta_total']>rolling['ub']]['a'] = 1
     
     return data, rolling
 
 def pre_process_cc(data_cc, date_range):
     data_cc['Datum'] = pd.to_datetime(data_cc['Datum'])
     data_cc = data_cc[(data_cc['Datum'] >= date_range[0]) & (data_cc['Datum'] <= date_range[1])]
+    data_cc.is_copy = False
     data_cc['date'] = pd.to_datetime(data_cc['Datum']).apply(lambda x: x.strftime('%Y-%m-%d')) 
     return data_cc
       
@@ -132,7 +133,7 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
     #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     # Aggregated water consumption
-    data, rolling = pre_process_total(data_aggregated, location, window_size)     
+    data, rolling = pre_process_total(data_aggregated.copy(), location, window_size)     
     mean_plot = round(np.mean(data['delta_total']),3)
     std_plot = round(np.std(data['delta_total']),3)
  
