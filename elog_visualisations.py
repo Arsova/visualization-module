@@ -27,7 +27,8 @@ from bokeh.models import (
     PrintfTickFormatter,
     NumeralTickFormatter,
     LinearAxis, 
-    Range1d
+    Range1d,
+    Legend
 )
 
 
@@ -106,7 +107,8 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
     
     
     
-    p_events = p1.triangle(x = 'date', y = 'Hour', legend= "Hoofdtype Melding", source = source_events, color = 'color', size = 6)
+    #p_events = p1.triangle(x = 'date', y = 'Hour', legend= "Hoofdtype Melding", source = source_events, color = 'color', size = 6)
+    p_events = p1.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = 'color', size = 6)
     
     color_bar = ColorBar(color_mapper=mapper, border_line_color=None,label_standoff=12, location=(0, 0))
     color_bar.formatter = NumeralTickFormatter(format='0.0')
@@ -128,7 +130,7 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
     p1.axis.major_label_standoff = 0
     #This may be useful for the legend:
     #http://bokeh.pydata.org/en/latest/docs/user_guide/styling.html#legends
-    
+        
     p1.legend.location = "top_left"
     p1.legend.click_policy= "hide"
     p1.add_tools(heat_map_hover)
@@ -156,6 +158,7 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
             legend='moving_average (window = {0} days)'.format(window_size), color = '#4daf4a')
     
     p2.legend.location = "top_left"
+    p2.legend.orientation = "horizontal"
     p2.legend.click_policy= "hide"
     p2.ygrid.band_fill_color = "olive"
     p2.ygrid.band_fill_alpha = 0.1
@@ -193,7 +196,7 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
 if __name__ == "__main__":
     data_aggregated = pd.read_csv('data/Data_heat_maps/aggregated_day/aggregated_day_total.csv')
     data_cc = pd.read_csv('data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
-    p1, p2 = multiple_plot(1163208, data_aggregated, data_cc, plot_fig = True)
-    #multiple_plot(1255365, data_aggregated, data_cc, plot_fig = True)
-    #multiple_plot(1813229, data_aggregated, data_cc, plot_fig = True)
+    multiple_plot(1163208, data_aggregated, data_cc, plot_fig = True)
+    multiple_plot(1255365, data_aggregated, data_cc, plot_fig = True)
+    multiple_plot(1813229, data_aggregated, data_cc, plot_fig = True)
     
