@@ -58,17 +58,22 @@ def pre_process_total(data, location, window_size):
     data['c'] = '#377eb8'
     data['c'][data['delta_total']>rolling['ub']] = '#d53e4f'
     data['s'] = 6
-    data[data['delta_total']>rolling['ub']]['s'] = 8
+    data['s'][data['delta_total']>rolling['ub']] = 8
     
     data['a'] = 0.4
-    data[data['delta_total']>rolling['ub']]['a'] = 1
+    data['a'][data['delta_total']>rolling['ub']]= 1
     
     return data, rolling
 
 def pre_process_cc(data_cc, date_range):
+    event_dic = {'Afwijkende geur en-of smaak':'#a50026', 'Afwijkende kleur': '#d73027', 'Afwijkende temperatuur': '#f46d43',
+                 'Afwijkende waterdruk':'#fdae61', 'Geen water':'#fee08b', 'Geluid in de (drink)waterinstallatie':'#ffffbf', 
+                 'Lekkage binnenshuis':'#d9ef8b', 'Lekkage buitenshuis':'#a6d96a', 'Meteropstelling (geen lekkage)':'#66bd63',
+                 'Monteursinzet n.a.v. eerdere melding': '#1a9850'}
+    
+    data_cc['color'] = data_cc['Hoofdtype Melding'].apply(lambda x: event_dic[x])
     data_cc['Datum'] = pd.to_datetime(data_cc['Datum'])
     data_cc = data_cc[(data_cc['Datum'] >= date_range[0]) & (data_cc['Datum'] <= date_range[1])]
-    data_cc.is_copy = False
     data_cc['date'] = pd.to_datetime(data_cc['Datum']).apply(lambda x: x.strftime('%Y-%m-%d')) 
     return data_cc
       
@@ -95,14 +100,13 @@ def multiple_plot(location, data_aggregated, data_cc, window_size = 30, plot_fig
     source = ColumnDataSource(df)
     heat_map = p1.rect(x="date", y="hour", width=1, height=1, source = source, fill_color={'field': 'rate', 'transform': mapper},
             line_color=None) 
-    
-#     color_events = ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#a6d96a', '#66bd63', 
-#                     '#1a9850', '#00683']
-    
+        
     data_cc = pre_process_cc(data_cc, date_range)
     source_events = ColumnDataSource(data_cc)
-    p_events = p1.circle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = '#fdae61', size = 6)
     
+    
+    
+    p_events = p1.triangle(x = 'date', y = 'Hour', legend= "Hoofdtype Melding", source = source_events, color = 'color', size = 6)
     
     color_bar = ColorBar(color_mapper=mapper, border_line_color=None,label_standoff=12, location=(0, 0))
     color_bar.formatter = NumeralTickFormatter(format='0.0')
