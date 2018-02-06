@@ -1,8 +1,8 @@
 # imports
 from bokeh.io import output_file, show
 from bokeh.models import (
-GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, BoxSelectTool, BoxZoomTool, HoverTool,
-ResetTool, Legend, LegendItem,LassoSelectTool, CheckboxGroup, TapTool)
+GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, HoverTool,
+ResetTool, Legend, LegendItem, CheckboxGroup, TapTool, Button, TextInput)
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
 import bokeh.plotting as bk
@@ -43,26 +43,29 @@ def return_layout():
     zipcode_elog=list(df1['Zipcode'])
     value_elog = return_value_list(locations=location_elog)
 
-    def plot_radius(lat, lon, radius):
+    def plot_radius(lat=[], lon=[], radius=[]):
         """
         This function calcualte plot a circle that represents the radious of the events selected into a map
-            
+
         Parameters
         ---------------------------------
             lon: longitid of the eLog location
             lat: latitud of the eLog location
             radius: the circle radious in Km
-            
+
         Return
         ---------------------------------
             events_selected: vector with the Id of the events selected
         """
-        radius = radius * 1000 #Convert to Km
+        radius = [rad*1000 for rad in radius] #Convert to Km
 #        df = pd.DataFrame([[lat, lon, radius]], columns = ["latitud", "longitud", 'radius'])
 #        source = ColumnDataSource(df)
-        source_radius_circle.data['lat_radius'] = [lat]
-        source_radius_circle.data['lon_radius'] = [lon]
-        source_radius_circle.data['rad_radius'] = [radius]
+        print(lat)
+        print(lon)
+        print(radius)
+        source_radius_circle.data['lat_radius'] = lat
+        source_radius_circle.data['lon_radius'] = lon
+        source_radius_circle.data['rad_radius'] = radius
 #        radius_circle = Circle(x="longitud", y="latitud",radius= 'radius',fill_alpha=0.5, line_color='black')
 #        radius_circle_glyph = plot.add_glyph(source, radius_circle)
 
@@ -109,20 +112,37 @@ def return_layout():
         ind = new['1d']['indices'][0]
         print(lat_elog[ind])
         print(lon_elog[ind])
-        plot_radius(lat_elog[ind], lon_elog[ind], 5)
-    
-    
-    
+        l1 = []
+        l2 = []
+        r = []
+        l1.append(lat_elog[ind])
+        l2.append(lon_elog[ind])
+        r.append(float(text_input.value))
+        plot_radius(l1, l2, r)
+
+    def reset_radius():
+        l1 = []
+        l2 = []
+        r = []
+        plot_radius(l1, l2, r)
+
+    def change_radius(attr,old,new):
+        new_rad = float(text_input.value)*1000
+        r = []
+        r.append(new_rad)
+        source_radius_circle.data['rad_radius'] = r
+
+
     source_radius_circle = bk.ColumnDataSource(
         data=dict(
             lat_radius=[],
             lon_radius=[],
-            rad_radius=[]       
+            rad_radius=[]
         )
     )
 
-    
-    
+
+
     # original data source for elog data
     source_elog_original = bk.ColumnDataSource(
         data=dict(
@@ -221,14 +241,15 @@ def return_layout():
     low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
     fill_alpha=0.5, line_color=None, name="elog_locations")
     glyph_circle = plot.add_glyph(source_elog, circle)
-    
+
     circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.5, line_color='black')
     glyph_circle_radius = plot.add_glyph(source_radius_circle, circle_radius)
 
-
+    button = Button(label="Remove Radius", button_type="success")
+    button.on_click(reset_radius)
     # tools to include on the visualization
-    plot.add_tools(PanTool(), WheelZoomTool(), BoxSelectTool(), BoxZoomTool(match_aspect=True),
-    	    ResetTool(), LassoSelectTool(), TapTool())
+    plot.add_tools(PanTool(), WheelZoomTool(),
+    	    ResetTool(), TapTool())
 
     # Hover tool for triangles
     triangle_hover = HoverTool(renderers=[glyph_triangle],
@@ -254,6 +275,9 @@ def return_layout():
     # """)
 
     glyph_circle.data_source.on_change('selected', tap_tool_handler)
+
+    text_input = TextInput(value="3", title="Distance in km:")
+    text_input.on_change('value', change_radius)
     # # in the broswer console, you will see messages when circles are clicked
     # tool = plot.select(dict(type=TapTool))
     # # tool.names.append("elog locations")
@@ -287,7 +311,8 @@ def return_layout():
     # Add stuff to the app
 
     row1 = row([slider, slider_events])
-    row2 = row([plot, checkbox_group])
+    column1 = column([checkbox_group, button, text_input])
+    row2 = row([plot, column1])
     layout = column([row1, row2])
     return layout
     # curdoc().add_root(layout)
