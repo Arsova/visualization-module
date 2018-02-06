@@ -43,6 +43,28 @@ def return_layout():
     zipcode_elog=list(df1['Zipcode'])
     value_elog = return_value_list(locations=location_elog)
 
+    def plot_radius(lat, lon, radius):
+        """
+        This function calcualte plot a circle that represents the radious of the events selected into a map
+            
+        Parameters
+        ---------------------------------
+            lon: longitid of the eLog location
+            lat: latitud of the eLog location
+            radius: the circle radious in Km
+            
+        Return
+        ---------------------------------
+            events_selected: vector with the Id of the events selected
+        """
+        radius = radius * 1000 #Convert to Km
+#        df = pd.DataFrame([[lat, lon, radius]], columns = ["latitud", "longitud", 'radius'])
+#        source = ColumnDataSource(df)
+        source_radius_circle.data['lat_radius'] = [lat]
+        source_radius_circle.data['lon_radius'] = [lon]
+        source_radius_circle.data['rad_radius'] = [radius]
+#        radius_circle = Circle(x="longitud", y="latitud",radius= 'radius',fill_alpha=0.5, line_color='black')
+#        radius_circle_glyph = plot.add_glyph(source, radius_circle)
 
     # create filtering function, calls return_value_list() to get new consumption values
     def filter_usage(attr,old,new):
@@ -87,8 +109,20 @@ def return_layout():
         ind = new['1d']['indices'][0]
         print(lat_elog[ind])
         print(lon_elog[ind])
-        print(place_elog[ind])
+        plot_radius(lat_elog[ind], lon_elog[ind], 5)
+    
+    
+    
+    source_radius_circle = bk.ColumnDataSource(
+        data=dict(
+            lat_radius=[],
+            lon_radius=[],
+            rad_radius=[]       
+        )
+    )
 
+    
+    
     # original data source for elog data
     source_elog_original = bk.ColumnDataSource(
         data=dict(
@@ -187,6 +221,9 @@ def return_layout():
     low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
     fill_alpha=0.5, line_color=None, name="elog_locations")
     glyph_circle = plot.add_glyph(source_elog, circle)
+    
+    circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.5, line_color='black')
+    glyph_circle_radius = plot.add_glyph(source_radius_circle, circle_radius)
 
 
     # tools to include on the visualization
