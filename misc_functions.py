@@ -58,7 +58,7 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     value_list = []
     start = convert_to_date_reverse(start)
     end = convert_to_date_reverse(end)
-    df = pd.read_csv('data/aggregated_day_total_positive.csv')
+    df = pd.read_csv('data/aggregated_day_total_2_positives.csv')
     df['norm_date'] = df.apply(lambda row: convert_to_date_reverse(row['norm_date']), axis=1)
     df = df.loc[(df['norm_date'] >= start) & (df['norm_date'] <= end)]
     for loc in locations:
