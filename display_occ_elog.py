@@ -16,12 +16,17 @@ from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
 from elog_visualisations import *
 from bokeh.events import Tap
+from bokeh.models.glyphs import Rect
+from bokeh.models.markers import Square
 
 def return_layout():
     # read data files
     df1 = pd.read_csv('data/coordinates-codes-updated.csv', delimiter=';')
     # limited_occ_with_gps_new.csv (replace / with -)
     df2 = pd.read_csv('data/limited_occ_with_gps_new.csv', delimiter=';')
+    #booster location data
+    df3 = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
+    df4 = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
 
     # get selected attribtes for occurrences
     lat=list(df2['Latitude'])
@@ -42,6 +47,15 @@ def return_layout():
     location_elog=list(df1['Location'])
     zipcode_elog=list(df1['Zipcode'])
     value_elog = return_value_list(locations=location_elog)
+
+    booster_lat_out = list(df3['Lat'])
+    booster_lon_out = list(df3['Lon'])
+    booster_name_out = list(df3['NAAM'])
+
+    booster_lat_in = list(df4['Lat'])
+    booster_lon_in = list(df4['Lon'])
+    booster_name_in = list(df4['NAAM'])
+
 
     def plot_radius(lat=[], lon=[], radius=[]):
         """
@@ -141,6 +155,21 @@ def return_layout():
         )
     )
 
+    source_booster_out = bk.ColumnDataSource(
+        data=dict(
+            booster_lat=booster_lat_out,
+            booster_lon=booster_lon_out,
+            booster_name=booster_name_out
+        )
+    )
+
+    source_booster_in = bk.ColumnDataSource(
+        data=dict(
+            booster_lat=booster_lat_in,
+            booster_lon=booster_lon_in,
+            booster_name=booster_name_in
+        )
+    )
 
 
     # original data source for elog data
@@ -247,6 +276,14 @@ def return_layout():
 
     button = Button(label="Remove Radius", button_type="success")
     button.on_click(reset_radius)
+
+
+    square_out = Square(x="booster_lon", y="booster_lat", size=15, fill_color="brown", line_color=None)
+    glyph_square_out = plot.add_glyph(source_booster_out, square_out)
+
+    square_in = Square(x="booster_lon", y="booster_lat", size=15, fill_color="green", line_color=None)
+    glyph_square_in = plot.add_glyph(source_booster_in, square_in)
+
     # tools to include on the visualization
     plot.add_tools(PanTool(), WheelZoomTool(),
     	    ResetTool(), TapTool())
@@ -268,6 +305,17 @@ def return_layout():
                              ]))
     plot.add_tools(circle_hover)
 
+    booster_out_hover = HoverTool(renderers=[glyph_square_out],
+                             tooltips=OrderedDict([
+                                 ("Location", "@booster_name")
+                             ]))
+    plot.add_tools(booster_out_hover)
+
+    booster_in_hover = HoverTool(renderers=[glyph_square_in],
+                             tooltips=OrderedDict([
+                                 ("Location", "@booster_name")
+                             ]))
+    plot.add_tools(booster_in_hover)
 
     tap_tool = TapTool(names=['elog_locations'], renderers=[glyph_circle])
     # tap_tool.callback = CustomJS(args=dict(source=source_tap_tool), code="""
@@ -304,7 +352,9 @@ def return_layout():
     # Add legend
     legend = Legend(items=[
         LegendItem(label="elog_locations"   , renderers=[glyph_circle]),
-        LegendItem(label="occurrences" , renderers=[glyph_triangle])
+        LegendItem(label="occurrences" , renderers=[glyph_triangle]),
+        LegendItem(label="Inflow" , renderers=[glyph_square_in]),
+        LegendItem(label="Outflow" , renderers=[glyph_square_out])
     ], orientation="vertical", click_policy="hide")
     plot.add_layout(legend, "center")
 
