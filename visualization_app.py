@@ -19,44 +19,50 @@ from bokeh.events import Tap
 from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
 
+
 def return_layout():
-    # read data files
-    df1 = pd.read_csv('data/coordinates-codes-updated.csv', delimiter=';')
+
+    ########################################################################
+    # read data files and process
+    ########################################################################
+    df_elog_coor = pd.read_csv('data/coordinates-codes-updated.csv', delimiter=';')
     # limited_occ_with_gps_new.csv (replace / with -)
-    df2 = pd.read_csv('data/limited_occ_with_gps_time.csv', delimiter=';')
+    data_cc = pd.read_csv('data/limited_occ_with_gps_time.csv', delimiter=';')
     #booster location data
-    df3 = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
-    df4 = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
+    df_booster_out = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
+    df_booster_in = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
 
     # get selected attribtes for occurrences
-    lat=list(df2['Latitude'])
-    lon=list(df2['Longitude'])
-    city=list(df2['Address'])
-    issue=list(df2['Hoofdtype Melding'])
-    user=list(df2['Verbruiker Omschr'])
-    dates=list(df2['Datum'])
+    lat=list(data_cc['Latitude'])
+    lon=list(data_cc['Longitude'])
+    city=list(data_cc['Address'])
+    issue=list(data_cc['Hoofdtype Melding'])
+    user=list(data_cc['Verbruiker Omschr'])
+    dates=list(data_cc['Datum'])
     # dates = convert_to_date(dates)
     occur_type = set(issue)
     occur_type = list(occur_type)
     occur_default = list(range(len(occur_type)))
 
     # get selected attribtes for elog
-    lat_elog=list(df1['Lat'])
-    lon_elog=list(df1['Lon'])
-    place_elog=list(df1['Place'])
-    location_elog=list(df1['Location'])
-    zipcode_elog=list(df1['Zipcode'])
+    lat_elog=list(df_elog_coor['Lat'])
+    lon_elog=list(df_elog_coor['Lon'])
+    place_elog=list(df_elog_coor['Place'])
+    location_elog=list(df_elog_coor['Location'])
+    zipcode_elog=list(df_elog_coor['Zipcode'])
     value_elog = return_value_list(locations=location_elog)
 
-    booster_lat_out = list(df3['Lat'])
-    booster_lon_out = list(df3['Lon'])
-    booster_name_out = list(df3['NAAM'])
+    booster_lat_out = list(df_booster_out['Lat'])
+    booster_lon_out = list(df_booster_out['Lon'])
+    booster_name_out = list(df_booster_out['NAAM'])
 
-    booster_lat_in = list(df4['Lat'])
-    booster_lon_in = list(df4['Lon'])
-    booster_name_in = list(df4['NAAM'])
+    booster_lat_in = list(df_booster_in['Lat'])
+    booster_lon_in = list(df_booster_in['Lon'])
+    booster_name_in = list(df_booster_in['NAAM'])
 
-
+    ########################################################################
+    # Event Handlers
+    ########################################################################
     def plot_radius(lat=[], lon=[], radius=[]):
         """
         This function calcualte plot a circle that represents the radious of the events selected into a map
@@ -133,9 +139,7 @@ def return_layout():
         l2.append(lon_elog[ind])
         r.append(float(text_input.value))
         plot_radius(l1, l2, r)
-        #data_cc = select_events(lon_elog[ind], lat_elog[ind], df2, text_input.value*1000)
-
-
+        #data_cc = select_events(lon_elog[ind], lat_elog[ind], data_cc, text_input.value*1000)
 
     def reset_radius():
         l1 = []
@@ -150,6 +154,11 @@ def return_layout():
         source_radius_circle.data['rad_radius'] = r
 
 
+    ########################################################################
+    # Define data sources
+    ########################################################################
+
+    # data source for drawing radius circle
     source_radius_circle = bk.ColumnDataSource(
         data=dict(
             lat_radius=[],
@@ -158,6 +167,7 @@ def return_layout():
         )
     )
 
+    # data source for outflow boosters
     source_booster_out = bk.ColumnDataSource(
         data=dict(
             booster_lat=booster_lat_out,
@@ -166,6 +176,7 @@ def return_layout():
         )
     )
 
+    # data source for inflow pumping stations
     source_booster_in = bk.ColumnDataSource(
         data=dict(
             booster_lat=booster_lat_in,
@@ -224,28 +235,42 @@ def return_layout():
     # dummy data source to trigger real callback
     source_fake = ColumnDataSource(data=dict(value=[]))
 
+    ########################################################################
+    # Define widgets
+    ########################################################################
 
-    # Define slider and callbacks
+    # slider and callbacks for water usage
     slider = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)), title="Consumption period",
     step=1, callback_policy="mouseup")
     slider.callback = CustomJS(args=dict(source=source_fake), code="""
         source.data = { value: [cb_obj.value] }
     """)
 
-
-    #change fake data source, which in turn triggers filter function to modify the real data
+    # change fake data source, which in turn triggers filter function to modify the real data
     source_fake.on_change('data', filter_usage)
 
-
+    # slider and callbacks for events
     slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
     step=1, title="Occurrence period")
     slider_events.on_change("value", filter_occurrences)
 
+	# checkbox for event type
     checkbox_group = CheckboxGroup(
             labels=occur_type, active=occur_default)
 
     checkbox_group.on_change("active", filter_occurrences)
 
+    # Button to remove radius feature
+    button = Button(label="Remove Radius", button_type="success")
+    button.on_click(reset_radius)
+
+    # Text input for radius
+    text_input = TextInput(value="3", title="Distance in km:")
+    text_input.on_change('value', change_radius)
+
+    ########################################################################
+    # Define map layput
+    ########################################################################
 
     # define maps, options
     map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
@@ -255,29 +280,34 @@ def return_layout():
     # use your api key below
     plot.api_key = get_api_key()
 
+    ########################################################################
+    # Define glyphs
+    ########################################################################
+
     # triangle glyphs on the map
-    triangle = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
-    glyph_triangle = plot.add_glyph(source, triangle)
+    triangle_event = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
+    glyph_triangle = plot.add_glyph(source, triangle_event)
 
     # circle glyphs on the map
-    circle = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
+    circle_elog = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
     palette = ['#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'],
     low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
     fill_alpha=0.5, line_color=None, name="elog_locations")
-    glyph_circle = plot.add_glyph(source_elog, circle)
+    glyph_circle = plot.add_glyph(source_elog, circle_elog)
 
     circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.5, line_color='black')
     glyph_circle_radius = plot.add_glyph(source_radius_circle, circle_radius)
-
-    button = Button(label="Remove Radius", button_type="success")
-    button.on_click(reset_radius)
-
 
     square_out = Square(x="booster_lon", y="booster_lat", size=15, fill_color="brown", line_color=None)
     glyph_square_out = plot.add_glyph(source_booster_out, square_out)
 
     square_in = Square(x="booster_lon", y="booster_lat", size=15, fill_color="green", line_color=None)
     glyph_square_in = plot.add_glyph(source_booster_in, square_in)
+
+    ########################################################################
+    # Other misc tools: hovers, taps, etc
+    ########################################################################
+
 
     # tools to include on the visualization
     plot.add_tools(PanTool(), WheelZoomTool(),
@@ -300,29 +330,23 @@ def return_layout():
                              ]))
     plot.add_tools(circle_hover)
 
+    # Hover tool for booster out
     booster_out_hover = HoverTool(renderers=[glyph_square_out],
                              tooltips=OrderedDict([
                                  ("Location", "@booster_name")
                              ]))
     plot.add_tools(booster_out_hover)
 
+    # Hover tool for booster in
     booster_in_hover = HoverTool(renderers=[glyph_square_in],
                              tooltips=OrderedDict([
                                  ("Location", "@booster_name")
                              ]))
     plot.add_tools(booster_in_hover)
 
+    # Tap tool for elog circles
     tap_tool = TapTool(names=['elog_locations'], renderers=[glyph_circle])
-    # tap_tool.callback = CustomJS(args=dict(source=source_tap_tool), code="""
-    #     source.data = { value: [cb_data.index['1d'].indices[0]] }
-    # """)
-
     glyph_circle.data_source.on_change('selected', tap_tool_handler)
-
-    text_input = TextInput(value="3", title="Distance in km:")
-    text_input.on_change('value', change_radius)
-
-
 
     # Add legend
     legend = Legend(items=[
@@ -333,7 +357,9 @@ def return_layout():
     ], orientation="vertical", click_policy="hide")
     plot.add_layout(legend, "center")
 
-    # Add stuff to the app
+    ########################################################################
+    # Manage layout
+    ########################################################################
 
     row1 = row([slider, slider_events])
     column1 = column([checkbox_group, button, text_input])
@@ -341,5 +367,3 @@ def return_layout():
     layout = column([row1, row2])
 
     return layout
-    # curdoc().add_root(layout)
-    # curdoc().add_root(source_fake)
