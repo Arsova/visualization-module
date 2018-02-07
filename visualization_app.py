@@ -20,7 +20,7 @@ from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
 
 
-def return_layout():
+def visualize():
 
     ########################################################################
     # read data files and process
@@ -366,4 +366,7 @@ def return_layout():
     row2 = row([plot, column1])
     layout = column([row1, row2])
 
-    return layout
+    curdoc().add_root(layout)
+
+
+visualize()
