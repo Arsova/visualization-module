@@ -133,18 +133,25 @@ def filter_occurrences(attr,old,new):
     and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
 
-def heat_map_stuff(df_heat):
+def heat_map_stuff(df_heat, data_aggregated_day, rolling):
     source_heat_map_update = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
     source_heat_map.data = source_heat_map_update.data
+
+    source_data_aggregated_day.data = ColumnDataSource(data=data_aggregated_day).data
+    source_rolling.data = ColumnDataSource(data=rolling).data
     print('generated...')
 
 def get_new_heat_map_source(location, flag=0):
     data = pre_process_hour_consuption(location)
     df_heat = pd.DataFrame(data.stack(), columns=['rate']).reset_index()
+
+    data_aggregated_day_local, rolling_local = pre_process_total(df_data_aggregated, location, 30)
+
+
     if flag == 1:
         return df_heat
     else:
-        heat_map_stuff(df_heat)
+        heat_map_stuff(df_heat, data_aggregated_day_local, rolling_local)
 
 def tap_tool_handler(attr,old,new):
     ind = new['1d']['indices'][0]
@@ -161,7 +168,7 @@ def tap_tool_handler(attr,old,new):
     print('location number: ', location_elog[ind])
     get_new_heat_map_source(location_elog[ind], 0)
 
-    data, rolling = pre_process_total(data_aggregated, location_elog[ind], 30)
+
 
 
     #data_cc = select_events(lon_elog[ind], lat_elog[ind], data_cc, text_input.value*1000)
@@ -406,8 +413,9 @@ data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
 # source_heat_map = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
 source_heat_map = ColumnDataSource(data=df_heat1)
 source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
-source_rolling = ColumnDataSource(data=rolling)
-
+source_rolling = ColumnDataSource(data = rolling)
+data_cc_filtered = pre_process_cc(data_cc)
+source_events = ColumnDataSource(data = data_cc_filtered)
 # print(source_heat_map.data)
 
 # import datetime
@@ -431,8 +439,11 @@ mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=10000000)
 TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
 p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), tools=TOOLS_heat_map)
 
-heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map, fill_color={'field': 'rate', 'transform': mapper_heat_map},
-        line_color=None)
+heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
+p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = 'color', size = 6)
+
+
+
 
 color_bar = ColorBar(color_mapper=mapper_heat_map, border_line_color=None,label_standoff=12, location=(0, 0))
 color_bar.formatter = NumeralTickFormatter(format='0.0')
@@ -444,6 +455,11 @@ heat_map_hover = HoverTool(renderers=[heat_map],
                                          ('hour', '@hour'),
                                        ]))
 
+events_hover = HoverTool(renderers=[p_events],
+        tooltips=OrderedDict([('Event description',
+        '@{Hoofdtype Melding}'),
+        ]))
+
 
 
 p_heat_map.grid.grid_line_color = None
@@ -453,16 +469,19 @@ p_heat_map.xaxis.major_label_text_font_size = '0pt'  # turn off x-axis tick labe
 p_heat_map.yaxis.axis_label = 'Hour'
 p_heat_map.xaxis.axis_label = 'Days'
 p_heat_map.axis.major_label_standoff = 0
-#This may be useful for the legend:
-#http://bokeh.pydata.org/en/latest/docs/user_guide/styling.html#legends
 
 p_heat_map.legend.location = "top_left"
 p_heat_map.legend.click_policy= "hide"
 p_heat_map.add_tools(heat_map_hover)
+p_heat_map.add_tools(events_hover)
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p_outliers = figure(title="Daily water consumptions in million of Liters", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
 p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a',
               legend= "Consumption in ML", source = source_data_aggregated_day)
+
+p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',source = source_rolling)
+p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling, line_dash = 'dashed', line_width = 3, legend='moving_average', color = '#4daf4a')
 
 p_outliers.legend.location = "top_left"
 p_outliers.legend.orientation = "horizontal"
@@ -474,6 +493,26 @@ p_outliers.yaxis.axis_label = 'Million of Liters'
 p_outliers.xaxis.major_label_orientation = 3.1416 / 3
 p_outliers.x_range = p_heat_map.x_range# Same axes as the heatMap
 p_outliers.xaxis.formatter = FuncTickFormatter(code=""" var labels = %s; return labels[tick];""" % dates_list)
+
+
+circle_hover = HoverTool(renderers=[p_circle],
+                    tooltips=OrderedDict([('date', '@date'),
+                                          ('Water Consumption (ML)', '@delta_total'),
+                                         ]))
+
+p_ub_hover = HoverTool(renderers=[p_ub],
+                    tooltips=OrderedDict([('date', '@date'),
+                                          ('UpperBound water consumption (ML)', '@ub'),
+                                         ]))
+
+p_mean_hover = HoverTool(renderers=[p_mean],
+                    tooltips=OrderedDict([('date', '@date'),
+                                          ('Mean water consumption (ML)', '@y_mean'),
+                                         ]))
+
+p_outliers.add_tools(circle_hover)
+p_outliers.add_tools(p_ub_hover)
+p_outliers.add_tools(p_mean_hover)
 
 ########################################################################
 # Manage layout
