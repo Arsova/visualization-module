@@ -88,8 +88,7 @@ def plot_radius(lat=[], lon=[], radius=[]):
     source_radius_circle.data['lat_radius'] = lat
     source_radius_circle.data['lon_radius'] = lon
     source_radius_circle.data['rad_radius'] = radius
-#        radius_circle = Circle(x="longitud", y="latitud",radius= 'radius',fill_alpha=0.5, line_color='black')
-#        radius_circle_glyph = plot.add_glyph(source, radius_circle)
+
 
 # create filtering function, calls return_value_list() to get new consumption values
 def filter_usage(attr,old,new):
@@ -161,8 +160,6 @@ def get_events(lon, lat, radius, flag = 0):
 
 def tap_tool_handler(attr,old,new):
     ind = new['1d']['indices'][0]
-    # print(lat_elog[ind])
-    # print(lon_elog[ind])
     l1 = []
     l2 = []
     r0 = []
@@ -176,8 +173,6 @@ def tap_tool_handler(attr,old,new):
     get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
 
 
-
-    #data_cc = select_events(lon_elog[ind], lat_elog[ind], data_cc, text_input.value*1000)
 
 def reset_radius():
     l1 = []
@@ -425,6 +420,8 @@ source_rolling = ColumnDataSource(data = rolling)
 
 data_cc = pre_process_cc(data_cc)
 data_cc_filtered = get_events(5.47255, 51.4412585, 3, flag = 1)
+plot_radius([51.4412585], [5.47255], [3])
+
 source_events = ColumnDataSource(data = data_cc_filtered)
 
 # import datetime
@@ -443,7 +440,7 @@ for j in range(24):
 
 colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858']
 #     mapper = LinearColorMapper(palette=colors, low=df.rate.min(), high=df.rate.max())
-mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=5000000)
+mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=1000000)
 
 TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
 p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), tools=TOOLS_heat_map)
