@@ -14,14 +14,16 @@ from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
-#from elog_visualisations import *
+from elog_visualisations import *
 from bokeh.events import Tap
 from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
 import numpy as np
 
 
+
 def visualize():
+    
     ########################################################################
     # read data files and process
     ########################################################################
@@ -31,7 +33,13 @@ def visualize():
     #booster location data
     df_booster_out = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
     df_booster_in = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
-
+    
+    
+    
+    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    data_aggregated = pd.read_csv('data/Data_heat_maps/aggregated_day/aggregated_day_total.csv')
+    data_cc = pd.read_csv('data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
+    #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # get selected attribtes for occurrences
     lat=list(data_cc['Latitude'])
     lon=list(data_cc['Longitude'])
@@ -133,7 +141,9 @@ def visualize():
         if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
         and source_original.data["issue"][i] in possible_events]
         for key in source_original.data}
-
+    
+    
+    
     def tap_tool_handler(attr,old,new):
         ind = new['1d']['indices'][0]
         
@@ -150,6 +160,10 @@ def visualize():
         #call data frames
         data_heat, hours, date, date_range = pre_process_hour_consuption(loc[0])
         source_heat = ColumnDataSource(data_heat) #Equivalent to data
+        
+        source_temp = ColumnDataSource(data = pd.DataFrame([[l1, l2, loc, r]], columns = ['l1', 'l2', 'loc', 'r']))
+        
+        
         
     def reset_radius():
         l1 = []
@@ -245,7 +259,7 @@ def visualize():
     # dummy data source to trigger real callback
     source_fake = ColumnDataSource(data=dict(value=[]))
     source_heat = ColumnDataSource(data=dict(value=[]))
-
+    source_temp = ColumnDataSource(data=dict(value=[]))
     ########################################################################
     # Define widgets
     ########################################################################
@@ -371,7 +385,14 @@ def visualize():
     ########################################################################
     colors_heat = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'] #Colors of the heat map
     data_heat = pd.DataFrame.from_dict(source_heat.data)
+    df = pd.DataFrame(data_heat.stack(), columns=['rate']).reset_index()
     
+    params = pd.DataFrame()
+    params = pd.DataFrame.from_dict(source_temp.data)
+    if len(params) > 0:
+        p1, p2 = multiple_plot(params['loc'], data_aggregated, data_cc, plot_fig = False)
+    else:
+        p1, p2 = multiple_plot(1163208, data_aggregated, data_cc, plot_fig = False)
     
     ########################################################################
     # Manage layout
@@ -379,8 +400,10 @@ def visualize():
     row1 = row([slider, slider_events])
     column1 = column([checkbox_group, button, text_input])
     row2 = row([plot, column1])
-    layout = column([row1, row2])
-
+    
+    
+    heatmap_layout = gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below') 
+    layout = column([row1, row2, heatmap_layout])
     curdoc().add_root(layout)
     
     	
