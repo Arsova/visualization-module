@@ -30,10 +30,7 @@ data_cc = pd.read_csv('data/limited_occ_with_gps_time.csv', delimiter=';')
 #booster location data
 df_booster_out = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
 df_booster_in = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
-
 df_data_aggregated = pd.read_csv('data/aggregated_day_total_2_positives.csv')
-
-
 
 # get selected attribtes for occurrences
 lat=list(data_cc['Latitude'])
@@ -144,7 +141,6 @@ def heat_map_stuff(df_heat, data_aggregated_day, rolling):
 def get_new_heat_map_source(location, flag=0):
     data = pre_process_hour_consuption(location)
     df_heat = pd.DataFrame(data.stack(), columns=['rate']).reset_index()
-
     data_aggregated_day_local, rolling_local = pre_process_total(df_data_aggregated, location, 30)
 
 
@@ -152,6 +148,16 @@ def get_new_heat_map_source(location, flag=0):
         return df_heat
     else:
         heat_map_stuff(df_heat, data_aggregated_day_local, rolling_local)
+        
+        
+def get_events(lon, lat, radius, flag = 0):
+    if flag == 1:
+        return select_events(lon, lat, data_cc, radius)
+    else:
+        data_cc_filtered_local = select_events(lon, lat, data_cc, radius)
+        source_events.data = ColumnDataSource(data = data_cc_filtered_local).data
+    
+    
 
 def tap_tool_handler(attr,old,new):
     ind = new['1d']['indices'][0]
@@ -167,7 +173,7 @@ def tap_tool_handler(attr,old,new):
     print('plotted radius')
     print('location number: ', location_elog[ind])
     get_new_heat_map_source(location_elog[ind], 0)
-
+    get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
 
 
 
@@ -184,7 +190,7 @@ def change_radius(attr,old,new):
     r = []
     r.append(new_rad)
     source_radius_circle.data['rad_radius'] = r
-
+    get_events(source_radius_circle.data['lon_radius'], source_radius_circle.data['lat_radius'], float(text_input.value), 0)
 
 ########################################################################
 # Define data sources
@@ -410,13 +416,16 @@ plot.add_layout(legend, "center")
 
 df_heat1 = get_new_heat_map_source(location=1163208, flag=1)
 data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
-# source_heat_map = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
 source_heat_map = ColumnDataSource(data=df_heat1)
+
+
 source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
 source_rolling = ColumnDataSource(data = rolling)
-data_cc_filtered = pre_process_cc(data_cc)
+
+
+data_cc = pre_process_cc(data_cc)
+data_cc_filtered = get_events(5.47255, 51.4412585, 3, flag = 1)
 source_events = ColumnDataSource(data = data_cc_filtered)
-# print(source_heat_map.data)
 
 # import datetime
 start = datetime.strptime("2017-01-01", "%Y-%m-%d")
@@ -434,7 +443,7 @@ for j in range(24):
 
 colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858']
 #     mapper = LinearColorMapper(palette=colors, low=df.rate.min(), high=df.rate.max())
-mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=10000000)
+mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=5000000)
 
 TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
 p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), tools=TOOLS_heat_map)
@@ -477,8 +486,7 @@ p_heat_map.add_tools(events_hover)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p_outliers = figure(title="Daily water consumptions in million of Liters", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
-p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a',
-              legend= "Consumption in ML", source = source_data_aggregated_day)
+p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML", source = source_data_aggregated_day)
 
 p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',source = source_rolling)
 p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling, line_dash = 'dashed', line_width = 3, legend='moving_average', color = '#4daf4a')
