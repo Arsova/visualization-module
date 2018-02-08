@@ -71,7 +71,6 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     return value_list
 
 
-
 def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
@@ -88,6 +87,46 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6371 # Radius of earth in kilometers. Use 3956 for miles
     return c * r
 
+def pre_process_hour_consuption(location):
+    retrieve = str(location) + '.csv'
+    data = pd.read_csv('data/Data_heat_maps/hour_consuption/' + retrieve)
+    data.columns.name = 'date'
+    data.index.name = 'hour'
+    data.index = data.index.astype(str)
+    return data
+
+def pre_process_total(data, location, window_size):
+    data = data[data['location'] == location]
+    data.is_copy = False
+    data['date'] = pd.to_datetime(data['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
+    data['delta_total'] = data['delta_total']/1000000
+    sem = lambda x: x.std() / np.sqrt(x.size)
+    rolling = data['delta_total'].rolling(window = window_size).agg({"y_mean": np.mean, "y_std": np.std, "y_sem": sem})
+    rolling = rolling.fillna(method='bfill')
+    rolling['ub'] = rolling.y_mean + 2 * rolling.y_std
+    rolling['date'] = data['norm_date']
+    # Identify Outliers
+    data['c'] = '#377eb8'
+    data['c'][data['delta_total']>rolling['ub']] = '#d53e4f'
+    data['s'] = 6
+    data['s'][data['delta_total']>rolling['ub']] = 8
+
+    data['a'] = 0.4
+    data['a'][data['delta_total']>rolling['ub']]= 1
+
+    return data, rolling
+
+def pre_process_cc(data_cc, date_range = ["2017-01-01", "2017-12-31"]):
+    event_dic = {'Afwijkende geur en-of smaak':'#a50026', 'Afwijkende kleur': '#d73027', 'Afwijkende temperatuur': '#f46d43',
+                 'Afwijkende waterdruk':'#fdae61', 'Geen water':'#fee08b', 'Geluid in de (drink)waterinstallatie':'#ffffbf',
+                 'Lekkage binnenshuis':'#d9ef8b', 'Lekkage buitenshuis':'#a6d96a', 'Meteropstelling (geen lekkage)':'#66bd63',
+                 'Monteursinzet n.a.v. eerdere melding': '#1a9850'}
+
+    data_cc['color'] = data_cc['Hoofdtype Melding'].apply(lambda x: event_dic[x])
+    data_cc['Datum'] = pd.to_datetime(data_cc['Datum'])
+    data_cc = data_cc[(data_cc['Datum'] >= date_range[0]) & (data_cc['Datum'] <= date_range[1])]
+    data_cc['date'] = pd.to_datetime(data_cc['Datum']).apply(lambda x: x.strftime('%Y-%m-%d'))
+    return data_cc
 
 
 def select_events(lon, lat, data_cc, radius):
