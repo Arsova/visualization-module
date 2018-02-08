@@ -12,11 +12,11 @@ import pandas as pd
 from datetime import date, datetime
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import DateRangeSlider
-from bokeh.layouts import layout, widgetbox, column, row
+from bokeh.layouts import layout, widgetbox, column, row, gridplot
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
-from elog_visualisations import *
+#from elog_visualisations import *
 from bokeh.events import Tap
 from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
