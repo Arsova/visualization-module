@@ -3,6 +3,7 @@ import pandas as pd
 from bokeh.transform import factor_cmap
 from math import radians, cos, sin, asin, sqrt
 import numpy as np
+pd.options.mode.chained_assignment = None
 
 def convert_list_to_date(list):
     new_list = []
@@ -95,9 +96,10 @@ def pre_process_hour_consuption(location):
     data.index = data.index.astype(str)
     return data
 
-def pre_process_total(data, location, window_size):
-    data = data[data['location'] == location]
-    data.is_copy = False
+def pre_process_total(data, location = None, window_size= 30):
+    if location is not None:
+        data = data[data['location'] == location]
+        
     data['date'] = pd.to_datetime(data['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
     data['delta_total'] = data['delta_total']/1000000
     sem = lambda x: x.std() / np.sqrt(x.size)
@@ -105,7 +107,7 @@ def pre_process_total(data, location, window_size):
     rolling = rolling.fillna(method='bfill')
     rolling['ub'] = rolling.y_mean + 2 * rolling.y_std
     rolling['date'] = data['norm_date']
-    # Identify Outliers
+    # Identify Outlies
     data['c'] = '#377eb8'
     data['c'][data['delta_total']>rolling['ub']] = '#d53e4f'
     data['s'] = 6
@@ -113,6 +115,22 @@ def pre_process_total(data, location, window_size):
 
     data['a'] = 0.4
     data['a'][data['delta_total']>rolling['ub']]= 1
+    
+    data['outlier'] = 0
+    data['outlier'][data['delta_total']>rolling['ub']] = 1
+    
+    #create the table to show the summary per every user
+    if location is None:
+        frames = pd.DataFrame()
+        frames['average_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].mean() * 1000000
+        frames['number_outliers'] = data.groupby(by = ['location'])['outlier'].sum()
+        data['number_days'] = 1
+        frames['number_days'] = data[['location', 'number_days']].groupby(by = ['location']).agg('count')
+        frames['average_outliers'] = frames['number_outliers']/frames['number_days']
+        frames['location'] = frames.index
+        frames = frames.sort_values(by=['average_outliers'], ascending = False)
+        
+        return frames.reset_index(drop=True)
 
     return data, rolling
 
