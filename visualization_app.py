@@ -14,7 +14,7 @@ from bokeh.layouts import layout, widgetbox, column, row
 from misc_functions import *
 from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
-from elog_visualisations import *
+from heat_mats_sources import *
 from bokeh.events import Tap
 from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
@@ -74,13 +74,11 @@ def visualize():
     def plot_radius(lat=[], lon=[], radius=[]):
         """
         This function calcualte plot a circle that represents the radious of the events selected into a map
-
         Parameters
         ---------------------------------
             lon: longitid of the eLog location
             lat: latitud of the eLog location
             radius: the circle radious in Km
-
         Return
         ---------------------------------
             events_selected: vector with the Id of the events selected
@@ -89,19 +87,6 @@ def visualize():
         source_radius_circle.data['lat_radius'] = lat
         source_radius_circle.data['lon_radius'] = lon
         source_radius_circle.data['rad_radius'] = radius
-        
-    def pre_process_hour_consuption(location):
-        retrieve = str(location) + '.csv'
-        data = pd.read_csv('data/Data_heat_maps/hour_consuption/' + retrieve)
-        data.columns.name = 'date'
-        data.index.name = 'hour'
-        data.index = data.index.astype(str)
-        hours = list(data.index)
-        date = list(data.columns)
-        date_range = [date[0], date[-1]]
-        date = list(pd.date_range(start = date[0], end = date[-1]).strftime('%Y-%m-%d'))
-        
-        return data, hours, date, date_range
     
     # create filtering function, calls return_value_list() to get new consumption values
     def filter_usage(attr,old,new):
@@ -142,7 +127,12 @@ def visualize():
         and source_original.data["issue"][i] in possible_events]
         for key in source_original.data}
     
-    
+    #define empty sources
+    data_heat_s = ColumnDataSource(data=dict(value=[]))
+    data__heat_stack_s = ColumnDataSource(data=dict(value=[]))
+    hours_s = ColumnDataSource(data=dict(value=[]))
+    date_s = ColumnDataSource(data=dict(value=[]))
+    date_range_s = ColumnDataSource(data=dict(value=[]))
     
     def tap_tool_handler(attr,old,new):
         ind = new['1d']['indices'][0]
@@ -158,13 +148,10 @@ def visualize():
         r.append(float(text_input.value))     
         plot_radius(l1, l2, r)
         #call data frames
-        data_heat, hours, date, date_range = pre_process_hour_consuption(loc[0])
-        source_heat = ColumnDataSource(data_heat) #Equivalent to data
+        data_heat_s.data, data__heat_stack_s.data, hours_s.data, date_s.data, date_range_s.data = pre_process_hour_consuption(loc[0])
+    
         
-        source_temp = ColumnDataSource(data = pd.DataFrame([[l1, l2, loc, r]], columns = ['l1', 'l2', 'loc', 'r']))
-        
-        
-        
+                           
     def reset_radius():
         l1 = []
         l2 = []
@@ -258,8 +245,7 @@ def visualize():
 
     # dummy data source to trigger real callback
     source_fake = ColumnDataSource(data=dict(value=[]))
-    source_heat = ColumnDataSource(data=dict(value=[]))
-    source_temp = ColumnDataSource(data=dict(value=[]))
+
     ########################################################################
     # Define widgets
     ########################################################################
@@ -383,16 +369,7 @@ def visualize():
     ########################################################################
     # Plot Heat map
     ########################################################################
-    colors_heat = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'] #Colors of the heat map
-    data_heat = pd.DataFrame.from_dict(source_heat.data)
-    df = pd.DataFrame(data_heat.stack(), columns=['rate']).reset_index()
     
-    params = pd.DataFrame()
-    params = pd.DataFrame.from_dict(source_temp.data)
-    if len(params) > 0:
-        p1, p2 = multiple_plot(params['loc'], data_aggregated, data_cc, plot_fig = False)
-    else:
-        p1, p2 = multiple_plot(1163208, data_aggregated, data_cc, plot_fig = False)
     
     ########################################################################
     # Manage layout
@@ -400,11 +377,13 @@ def visualize():
     row1 = row([slider, slider_events])
     column1 = column([checkbox_group, button, text_input])
     row2 = row([plot, column1])
+
+
+    p1 = multiple_plot(data_heat_s, data__heat_stack_s, hours_s, date_s, date_range_s)
     
-    
-    heatmap_layout = gridplot([[p1,None],[p2,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below') 
+    heatmap_layout = gridplot([[p1,None],[None,None]] , plot_width=1200, plot_height=400, toolbar_location = 'below') 
     layout = column([row1, row2, heatmap_layout])
     curdoc().add_root(layout)
     
     	
-temp  = visualize()
+visualize()
