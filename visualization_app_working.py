@@ -30,7 +30,7 @@ data_cc = pd.read_csv('data/limited_occ_with_gps_time.csv', delimiter=';')
 #booster location data
 df_booster_out = pd.read_csv('data/Installaties_Eindhoven_out.txt', delimiter=';')
 df_booster_in = pd.read_csv('data/Installaties_Eindhoven_in.txt', delimiter=';')
-df_data_aggregated = pd.read_csv('data/aggregated_day_total_2_positives.csv')
+df_data_aggregated = pd.read_csv('data/aggregated_day_total_positive.csv')
 
 # get selected attribtes for occurrences
 lat=list(data_cc['Latitude'])
