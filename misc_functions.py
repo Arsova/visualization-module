@@ -59,7 +59,7 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     value_list = []
     start = convert_to_date_reverse(start)
     end = convert_to_date_reverse(end)
-    df = pd.read_csv('data/aggregated_day_total_2_positives.csv')
+    df = pd.read_csv('visualization-module/data/aggregated_day_total_2_positives.csv')
     df['norm_date'] = df.apply(lambda row: convert_to_date_reverse(row['norm_date']), axis=1)
     df = df.loc[(df['norm_date'] >= start) & (df['norm_date'] <= end)]
     for loc in locations:
@@ -90,7 +90,7 @@ def haversine(lon1, lat1, lon2, lat2):
 
 def pre_process_hour_consuption(location):
     retrieve = str(location) + '.csv'
-    data = pd.read_csv('data/Data_heat_maps/hour_consuption/' + retrieve)
+    data = pd.read_csv('visualization-module/data/Data_heat_maps/hour_consuption/' + retrieve)
     data.columns.name = 'date'
     data.index.name = 'hour'
     data.index = data.index.astype(str)
@@ -99,7 +99,7 @@ def pre_process_hour_consuption(location):
 def pre_process_total(data, location = None, df_elog_coor = None, window_size= 30):
     if location is not None:
         data = data[data['location'] == location]
-        
+
     data['date'] = pd.to_datetime(data['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
     data['delta_total'] = data['delta_total']/1000000
     sem = lambda x: x.std() / np.sqrt(x.size)
@@ -115,10 +115,10 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
 
     data['a'] = 0.4
     data['a'][data['delta_total']>rolling['ub']]= 1
-    
+
     data['outlier'] = 0
     data['outlier'][data['delta_total']>rolling['ub']] = 1
-    
+
     #create the table to show the summary per every user
     if location is None:
         frames = pd.DataFrame()
@@ -129,10 +129,10 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
         frames['average_outliers'] = frames['number_outliers']/frames['number_days']
         frames['Location'] = frames.index
         frames.reset_index(drop=True)
-        
+
         frames = pd.merge(left = frames, right = df_elog_coor, on=['Location'])
-        
-        
+
+
         return frames
 
     return data, rolling
@@ -174,10 +174,10 @@ def select_events(lon, lat, data_cc, radius):
     return data_cc
 
 def get_api_key():
-    with open('data/api_key.txt') as infile:
+    with open('visualization-module/data/api_key.txt') as infile:
         for line in infile:
             return str(line)
 
 if __name__ == "__main__":
-    data_cc = pd.read_csv('data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
+    data_cc = pd.read_csv('visualization-module/data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')
     events_selected = select_events(5.487716, 51.479160, data_cc, 30)
