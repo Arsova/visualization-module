@@ -336,13 +336,13 @@ text_input.on_change('value', change_radius)
 
 columns_table = [
         TableColumn(field="Location", title="Location"),
-        #TableColumn(field="average_consuption_day_liters", title="Avg water consuption (L)"),
+        TableColumn(field="Place", title="Place"),
         TableColumn(field="number_days", title="Number of days recorded"),
         TableColumn(field="number_outliers", title="Number of outliers"),
         TableColumn(field="average_outliers", title="Outliers per day"),
     ]
 
-data_table = DataTable(source = source_table, columns = columns_table, width=400, height=540)
+data_table = DataTable(source = source_table, columns = columns_table, width=600, height=540)
 source_table.on_change('selected', data_table_handler)
 
 ########################################################################
