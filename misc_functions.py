@@ -96,7 +96,7 @@ def pre_process_hour_consuption(location):
     data.index = data.index.astype(str)
     return data
 
-def pre_process_total(data, location = None, window_size= 30):
+def pre_process_total(data, location = None, df_elog_coor = None, window_size= 30):
     if location is not None:
         data = data[data['location'] == location]
         
@@ -127,10 +127,13 @@ def pre_process_total(data, location = None, window_size= 30):
         data['number_days'] = 1
         frames['number_days'] = data[['location', 'number_days']].groupby(by = ['location']).agg('count')
         frames['average_outliers'] = frames['number_outliers']/frames['number_days']
-        frames['location'] = frames.index
-        frames = frames.sort_values(by=['average_outliers'], ascending = False)
+        frames['Location'] = frames.index
+        frames.reset_index(drop=True)
         
-        return frames.reset_index(drop=True)
+        frames = pd.merge(left = frames, right = df_elog_coor, on=['Location'])
+        
+        
+        return frames
 
     return data, rolling
 
