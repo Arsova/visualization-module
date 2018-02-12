@@ -466,7 +466,7 @@ TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
 p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), tools=TOOLS_heat_map)
 
 heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
-p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = 'color', size = 6)
+p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = 'color', size= 12, line_color="white")
 
 
 color_bar = ColorBar(color_mapper=mapper_heat_map, border_line_color=None,label_standoff=12, location=(0, 0))
@@ -549,12 +549,12 @@ p_outliers.add_tools(p_mean_hover)
 
 
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' height='60' width='250' style='float:center';>")
-div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:200%;'>Visualization App</h1>")
-image_layout = gridplot([[div1, div2]], plot_width=900, plot_height=400)
+div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:200%;'>Eindhoven Visualization</h1>")
+image_layout = gridplot([[div1, div2]], plot_width=3000, plot_height=400)
 tools_layout = column([slider, slider_events, checkbox_group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
 row2 = row([tools_layout, map_plot, data_table])
-heat_map_layout = gridplot([[p_heat_map],[p_outliers]], plot_width=1200, plot_height=400, toolbar_location = 'left')
+heat_map_layout = gridplot([[p_heat_map],[p_outliers]], plot_width=1400, plot_height=400, toolbar_location = 'left')
 row_final = row([image_layout, row2, heat_map_layout])
 
 curdoc().add_root(row_final)
