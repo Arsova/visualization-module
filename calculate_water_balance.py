@@ -3,7 +3,7 @@ from bokeh.plotting import figure, output_file, show
 from bokeh.core.properties import value
 import pandas as pd
 from os.path import join, dirname
-import datetime
+import datetime as dt
 
 import pandas as pd
 from scipy.signal import savgol_filter
@@ -28,9 +28,9 @@ def get_dataset(lvl, axis, pattern):
         pattern=0
     else:
         pattern=1
-    usage = pd.read_csv('Data/usage_water_balance_' + lvl +'_'+ str(axis_number)+ '.csv')
-    inflow = pd.read_csv('Data/inflow_water_balance_' + lvl + '_'+ str(axis_number)+ '.csv')
-    booster = pd.read_csv('Data/booster_water_balance_' + lvl + '_'+ str(axis_number)+ '.csv')
+    usage = pd.read_csv('visualization-module/data/water_balance/usage_water_balance_' + lvl +'_'+ str(axis_number)+ '.csv')
+    inflow = pd.read_csv('visualization-module/data/water_balance/inflow_water_balance_' + lvl + '_'+ str(axis_number)+ '.csv')
+    booster = pd.read_csv('visualization-module/data/water_balance/booster_water_balance_' + lvl + '_'+ str(axis_number)+ '.csv')
     usage['TimeStamp'] = pd.to_datetime(usage['TimeStamp'])
     inflow['TimeStamp'] = pd.to_datetime(inflow['TimeStamp'])
     booster['TimeStamp'] = pd.to_datetime(booster['TimeStamp'])
@@ -143,41 +143,51 @@ def update_plot(attr, old, new):
         ('Consumption', '$y million liters per %s' % (level_select.value)),
         ('Timestamp', '@TimeStamp'),
     ]
-pattern = 'Follow the inflow pattern'
-pattern_options=['Use the average usage', 'Follow the inflow pattern']
-pattern_select = Select(value=pattern, title='Usage pattern', options=pattern_options)
-axis = 'Show all values on the positive axis'
-axis_options=['Show all values on the positive axis', 'Show values on both negative and positive axis']
-axis_select = Select(value=axis, title='How to visualize positive and negative values?', options=axis_options)
-level = 'week'
-level_options=['20 minutes', 'hour', 'day', 'week', 'four weeks']
-level_select = Select(value=level, title='Aggregation level', options=level_options)
+
+
+
 
 
 #show(widgetbox(p))
+def get_water_balance_plot(plot=0):
 
-source_line, source_bar=get_dataset(level, axis, pattern)
-plot1 = make_line_plot(source_line)
-plot2 = make_bar_chart(source_bar)
-level_select.on_change('value', update_plot)
-axis_select.on_change('value', update_plot)
-pattern_select.on_change('value', update_plot)
-#hover = plot1.select(dict(type=HoverTool))
-#hover.tooltips = [
-#    ('Consumption', '$y million liters per %s'%(level_select.value)),
-#    ('Timestamp', '@TimeStamp'),
-#]
-hover = HoverTool(tooltips=OrderedDict([
-                                 ("Consumption", '$y million liters per %s'%(level_select.value)),
-                                 ("Date", "@TimeStamp")
-                             ]))
-plot1.add_tools(hover)
-text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non registered water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
-, width=550)
-controls = column(level_select, axis_select, pattern_select)
-column1=column(controls)
-row1=row(children=[plot1, column1])
-row2=row(children=[plot2, text_box])
-layout=column(row1,row2)
-curdoc().add_root(layout)
-curdoc().title = "Water Balance"
+    pattern = 'Follow the inflow pattern'
+    pattern_options=['Use the average usage', 'Follow the inflow pattern']
+    pattern_select = Select(value=pattern, title='Usage pattern', options=pattern_options)
+    axis = 'Show all values on the positive axis'
+    axis_options=['Show all values on the positive axis', 'Show values on both negative and positive axis']
+    axis_select = Select(value=axis, title='How to visualize positive and negative values?', options=axis_options)
+    level = 'week'
+    level_options=['20 minutes', 'hour', 'day', 'week', 'four weeks']
+    level_select = Select(value=level, title='Aggregation level', options=level_options)
+
+    source_line, source_bar=get_dataset(level, axis, pattern)
+    plot1 = make_line_plot(source_line)
+    plot2 = make_bar_chart(source_bar)
+    level_select.on_change('value', update_plot)
+    axis_select.on_change('value', update_plot)
+    pattern_select.on_change('value', update_plot)
+    #hover = plot1.select(dict(type=HoverTool))
+    #hover.tooltips = [
+    #    ('Consumption', '$y million liters per %s'%(level_select.value)),
+    #    ('Timestamp', '@TimeStamp'),
+    #]
+    hover = HoverTool(tooltips=OrderedDict([
+                                     ("Consumption", '$y million liters per %s'%(level_select.value)),
+                                     ("Date", "@TimeStamp")
+                                 ]))
+    plot1.add_tools(hover)
+    text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non registered water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
+    , width=550)
+    controls = column(level_select, axis_select, pattern_select)
+    column1=column(controls)
+    row1=row(children=[plot1, column1])
+    row2=row(children=[plot2, text_box])
+    layout=column(row1,row2)
+    if plot == 1:
+        curdoc().add_root(layout)
+        curdoc().title = "Water Balance"
+    else:
+        return layout
+
+# get_water_balance_plot(plot=1)

@@ -13,7 +13,7 @@ import pandas as pd
 from datetime import date, datetime
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import (
-        DateRangeSlider, DataTable, TableColumn, HTMLTemplateFormatter
+        DateRangeSlider, DataTable, TableColumn, HTMLTemplateFormatter, Panel, Tabs
         )
 from bokeh.layouts import layout, widgetbox, column, row, gridplot
 from misc_functions import *
@@ -22,7 +22,7 @@ from bokeh.transform import linear_cmap, log_cmap
 from bokeh.events import Tap
 from bokeh.models.glyphs import Rect
 from bokeh.models.markers import Square
-
+from calculate_water_balance import *
 ########################################################################
 # read data files and process
 ########################################################################
@@ -549,12 +549,15 @@ p_outliers.add_tools(p_mean_hover)
 
 
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' height='60' width='250' style='float:center';>")
-div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:200%;'>Eindhoven Visualization</h1>")
-image_layout = gridplot([[div1, div2]], plot_width=3000, plot_height=400)
+div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:150%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
+image_layout = gridplot([[div1, div2]], plot_width=2500, plot_height=300, toolbar_options={'logo': None})
 tools_layout = column([slider, slider_events, checkbox_group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
 row2 = row([tools_layout, map_plot, data_table])
 heat_map_layout = gridplot([[p_heat_map],[p_outliers]], plot_width=1400, plot_height=400, toolbar_location = 'left')
-row_final = row([image_layout, row2, heat_map_layout])
-
-curdoc().add_root(row_final)
+row_final = row([row2, heat_map_layout])
+tab1 = Panel(child=row_final, title="Events-usage")
+tab2 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
+tabs = Tabs(tabs=[ tab1, tab2 ])
+final_layout = gridplot([[image_layout], [tabs]], plot_width=2500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+curdoc().add_root(final_layout)
