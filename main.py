@@ -32,7 +32,7 @@ data_cc = pd.read_csv('visualization-module/data/limited_occ_with_gps_time.csv',
 #booster location data
 df_booster_out = pd.read_csv('visualization-module/data/Installaties_Eindhoven_out.txt', delimiter=';')
 df_booster_in = pd.read_csv('visualization-module/data/Installaties_Eindhoven_in.txt', delimiter=';')
-df_data_aggregated = pd.read_csv('visualization-module/data/aggregated_day_total_positive.csv')
+df_data_aggregated = pd.read_csv('visualization-module/data/aggregated_day_total_2_positives.csv')
 df_table = pre_process_total(df_data_aggregated, df_elog_coor = df_elog_coor)
 
 # get selected attribtes for occurrences
