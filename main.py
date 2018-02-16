@@ -3,8 +3,8 @@ from bokeh.io import output_file, show
 from bokeh.models import (
 GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, HoverTool,
 ResetTool, Legend, LegendItem, CheckboxGroup, TapTool, Button, TextInput, LinearColorMapper,
-BasicTicker, PrintfTickFormatter, ColorBar, BoxAnnotation, Band, LogColorMapper, FuncTickFormatter,
-PrintfTickFormatter, NumeralTickFormatter, LinearAxis, Range1d, Legend, Div
+    BasicTicker, PrintfTickFormatter, ColorBar, BoxAnnotation, Band, LogColorMapper, FuncTickFormatter,
+PrintfTickFormatter, NumeralTickFormatter, LinearAxis, Range1d, Legend, Div, BoxAnnotation, Slider
 )
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
@@ -63,6 +63,7 @@ booster_lat_in = list(df_booster_in['Lat'])
 booster_lon_in = list(df_booster_in['Lon'])
 booster_name_in = list(df_booster_in['NAAM'])
 
+
 ########################################################################
 # Event Handlers
 ########################################################################
@@ -120,7 +121,6 @@ def filter_occurrences(attr,old,new):
     val1 = str(slider_events.value[1])
     val1 = val1[:-3]
     val1 = date.fromtimestamp(int(val1))
-
     # checkbox_group.active gives a list of indices corresponding to options selected using checkbox
     possible_events = [occur_type[i] for i in checkbox_group.active]
 
@@ -129,14 +129,43 @@ def filter_occurrences(attr,old,new):
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
     and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
+    
+    #this function creates dynamicly changes the heat map
+    sorce_slider.data['start_date'] = [val0]
+    sorce_slider.data['end_date'] = [val1]
+    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+    
+    
+    
+def filter_sources_HM(start_date, end_date):
+   
+    def get_data_dates(CDS, start_date, end_date):
+        return {
+                key:[value for i, value in enumerate(CDS.data[key]) 
+                     if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and 
+                     convert_to_date_reverse(CDS.data["date"][i]) <= end_date] for key in CDS.data
+                }
+    
+    source_heat_map_temp.data = get_data_dates(source_heat_map, start_date, end_date)
+    source_data_aggregated_day_temp.data = get_data_dates(source_data_aggregated_day, start_date, end_date)
+    source_rolling_temp.data = get_data_dates(source_rolling, start_date, end_date)
+    source_events_temp.data = get_data_dates(source_events, start_date, end_date)
+    
+        
 
 def heat_map_stuff(df_heat, data_aggregated_day, rolling):
     source_heat_map_update = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
     source_heat_map.data = source_heat_map_update.data
-
     source_data_aggregated_day.data = ColumnDataSource(data=data_aggregated_day).data
     source_rolling.data = ColumnDataSource(data=rolling).data
-    print('generated...')
+    
+    #Define the temporal maps
+    source_heat_map_temp.data = source_heat_map_update.data
+    source_data_aggregated_day_temp.data = ColumnDataSource(data=data_aggregated_day).data
+    source_rolling_temp.data = ColumnDataSource(data=rolling).data
+    
+    
+
 
 def get_new_heat_map_source(location, flag=0):
     data = pre_process_hour_consuption(location)
@@ -155,6 +184,7 @@ def get_events(lon, lat, radius, flag = 0):
     else:
         data_cc_filtered_local = select_events(lon, lat, data_cc, radius)
         source_events.data = ColumnDataSource(data = data_cc_filtered_local).data
+        source_events_temp.data = ColumnDataSource(data = data_cc_filtered).data
 
 
 def data_table_handler(attr,old,new):
@@ -169,14 +199,13 @@ def data_table_handler(attr,old,new):
      lon.append(source_table.data['Lon'].data[ind])
      loc.append(source_table.data['Location'].data[ind])
      rad.append(float(text_input.value))
-
      # Print results
      plot_radius(lat, lon, rad)
      get_new_heat_map_source(loc[0], 0)
      get_events(lon, lat, rad, 0)
+     filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 
-     print(source_table.data['Location'].data[ind])
 
 
 def tap_tool_handler(attr,old,new):
@@ -190,6 +219,8 @@ def tap_tool_handler(attr,old,new):
     plot_radius(l1, l2, r0)
     get_new_heat_map_source(location_elog[ind], 0)
     get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
+    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+
 
 def reset_radius():
     l1 = []
@@ -203,10 +234,18 @@ def change_radius(attr,old,new):
     r.append(new_rad)
     source_radius_circle.data['rad_radius'] = r
     get_events(source_radius_circle.data['lon_radius'], source_radius_circle.data['lat_radius'], float(text_input.value), 0)
+    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 ########################################################################
 # Define data sources
 ########################################################################
+#data source to hadle the dinamic interface
+sorce_slider = bk.ColumnDataSource(
+    data=dict(
+        start_date=[],
+        end_date=[]
+    )
+)
 
 # data source for drawing radius circle
 source_radius_circle = bk.ColumnDataSource(
@@ -234,7 +273,6 @@ source_booster_in = bk.ColumnDataSource(
         booster_name=booster_name_in
     )
 )
-
 
 # original data source for elog data
 source_elog_original = bk.ColumnDataSource(
@@ -295,8 +333,12 @@ source_heat_map_misc = bk.ColumnDataSource(
         df_rate_max = []
     )
 )
+    
+# define sorce for the box
 
 source_table = bk.ColumnDataSource(data = df_table)
+
+
 ########################################################################
 # Define widgets
 ########################################################################
@@ -437,36 +479,49 @@ plot.add_layout(legend, "center")
 ########################################################################
 # Plot Heat map
 #######################################################################
-#Set up initial states
+
+
+########################################################################
+# Define initial parameters
+########################################################################
 df_heat1 = get_new_heat_map_source(location=1163208, flag=1)
 data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
 data_cc = pre_process_cc(data_cc)
-
 data_cc_filtered = get_events(5.47255, 51.4412585, 3, flag = 1)
 plot_radius([51.4412585], [5.47255], [3])
 
-#define sources
-source_heat_map = ColumnDataSource(data=df_heat1)
-source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
-source_rolling = ColumnDataSource(data = rolling)
-source_events = ColumnDataSource(data = data_cc_filtered)
-
-# Define parameters
 start = datetime.strptime("2017-01-01", "%Y-%m-%d")
 end = datetime.strptime("2017-12-31", "%Y-%m-%d")
 dates_list = list(pd.date_range(start = start, end = end).strftime('%Y-%m-%d'))
 dates_list = [str(j) for j in dates_list]
 hour_list = [str(x) for x in list(range(24))]
 
+#define sources original
+source_heat_map = ColumnDataSource(data=df_heat1)
+source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
+source_rolling = ColumnDataSource(data = rolling)
+source_events = ColumnDataSource(data = data_cc_filtered)
+
+source_heat_map_temp = ColumnDataSource(data=df_heat1)
+source_data_aggregated_day_temp = ColumnDataSource(data=data_aggregated_day)
+source_rolling_temp = ColumnDataSource(data = rolling)
+source_events_temp = ColumnDataSource(data = data_cc_filtered)
+
+
+########################################################################
+# Define Create graphs
+########################################################################
+
 colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858']
 #     mapper = LinearColorMapper(palette=colors, low=df.rate.min(), high=df.rate.max())
 mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=1000000)
 
 TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
-p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), tools=TOOLS_heat_map)
+p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), 
+                    tools=TOOLS_heat_map)
 
-heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
-p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events, color = 'color', size= 12, line_color="white")
+heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map_temp, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
+p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events_temp, color = 'color', size= 12, line_color="white")
 
 
 color_bar = ColorBar(color_mapper=mapper_heat_map, border_line_color=None,label_standoff=12, location=(0, 0))
@@ -491,7 +546,7 @@ p_heat_map.axis.axis_line_color = None
 p_heat_map.axis.major_tick_line_color = None
 p_heat_map.xaxis.major_label_text_font_size = '0pt'  # turn off x-axis tick labels
 p_heat_map.yaxis.axis_label = 'Hour'
-p_heat_map.xaxis.axis_label = 'Days'
+p_heat_map.xaxis.axis_label = None
 p_heat_map.axis.major_label_standoff = 0
 
 p_heat_map.legend.location = "top_left"
@@ -501,17 +556,23 @@ p_heat_map.add_tools(events_hover)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p_outliers = figure(title="Daily water consumptions in million of Liters", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
-p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML", source = source_data_aggregated_day)
+p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML", 
+                             source = source_data_aggregated_day_temp)
 
-p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',source = source_rolling)
-p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling, line_dash = 'dashed', line_width = 3, legend='moving_average', color = '#4daf4a')
+p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',
+                       source = source_rolling_temp)
+p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling_temp, line_dash = 'dashed', line_width = 3, 
+                         legend='moving_average', color = '#4daf4a')
 
+
+# To create intervals we can follow:
+                         
 p_outliers.legend.location = "top_left"
 p_outliers.legend.orientation = "horizontal"
 p_outliers.legend.click_policy= "hide"
 p_outliers.ygrid.band_fill_color = "olive"
 p_outliers.ygrid.band_fill_alpha = 0.1
-p_outliers.xaxis.axis_label = 'Date'
+p_outliers.xaxis.axis_label = None
 p_outliers.yaxis.axis_label = 'Million of Liters'
 p_outliers.xaxis.major_label_orientation = 3.1416 / 3
 p_outliers.x_range = p_heat_map.x_range# Same axes as the heatMap
@@ -540,12 +601,6 @@ p_outliers.add_tools(p_mean_hover)
 ########################################################################
 # Manage layout
 ########################################################################
-
-# row1 = row([slider, slider_events])
-# column1 = column([checkbox_group, button, text_input])
-# row2 = row([plot, column1, data_table])
-# heat_map_layout = gridplot([[p_heat_map,None],[p_outliers,None]], plot_width=1200, plot_height=400, toolbar_location = 'left')
-# layout = column([row1, row2, heat_map_layout])
 
 
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' height='60' width='250' style='float:center';>")
