@@ -133,7 +133,8 @@ def filter_occurrences(attr,old,new):
     #this function creates dynamicly changes the heat map
     sorce_slider.data['start_date'] = [val0]
     sorce_slider.data['end_date'] = [val1]
-    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+    if sorce_slider.data['start_date'] != []: 
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
     
     
     
@@ -184,7 +185,7 @@ def get_events(lon, lat, radius, flag = 0):
     else:
         data_cc_filtered_local = select_events(lon, lat, data_cc, radius)
         source_events.data = ColumnDataSource(data = data_cc_filtered_local).data
-        source_events_temp.data = ColumnDataSource(data = data_cc_filtered).data
+        source_events_temp.data = ColumnDataSource(data = data_cc_filtered_local).data
 
 
 def data_table_handler(attr,old,new):
@@ -203,7 +204,8 @@ def data_table_handler(attr,old,new):
      plot_radius(lat, lon, rad)
      get_new_heat_map_source(loc[0], 0)
      get_events(lon, lat, rad, 0)
-     filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+     if sorce_slider.data['start_date'] != []:    
+         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 
 
@@ -219,7 +221,8 @@ def tap_tool_handler(attr,old,new):
     plot_radius(l1, l2, r0)
     get_new_heat_map_source(location_elog[ind], 0)
     get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
-    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+    if sorce_slider.data['start_date'] != []:
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 
 def reset_radius():
@@ -234,7 +237,8 @@ def change_radius(attr,old,new):
     r.append(new_rad)
     source_radius_circle.data['rad_radius'] = r
     get_events(source_radius_circle.data['lon_radius'], source_radius_circle.data['lat_radius'], float(text_input.value), 0)
-    filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+    if sorce_slider.data['start_date'] != []:
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 ########################################################################
 # Define data sources
