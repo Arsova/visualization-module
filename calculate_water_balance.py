@@ -51,12 +51,12 @@ def get_water_balance_plot(plot=0):
             total['Loss']=total['TotalInflow']+total['TotalBooster']+total['Households']
         total_bar=total.apply(lambda x: x.abs() if np.issubdtype(x.dtype, np.number) else x)
         total_bar['Loss']=total['Loss']
-        print('In 2017 there was in total '+str(round(total['Loss'].sum()))+' million liters of non registered water. This '+str(total['Loss'].sum()/total['TotalInflow'].sum()*100)+'% of the total inflow')
+        print('In 2017 there was in total '+str(round(total['Loss'].sum()))+' million liters of non revenue water. This '+str(total['Loss'].sum()/total['TotalInflow'].sum()*100)+'% of the total inflow')
         print('total inflow: '+str(round(total['TotalInflow'].sum())))
         print('total outflow: '+str(round(total['TotalBooster'].sum())))
         print('total usage: '+str(round(total['Households'].sum())))
         print('total loss: ' + str(round(total['Loss'].sum())))
-        print('In 2017 there was in total '+str(round(total_bar['Loss'].sum()))+' million liters of non registered water. This '+str(total_bar['Loss'].sum()/total_bar['TotalInflow'].sum()*100)+'% of the total inflow')
+        print('In 2017 there was in total '+str(round(total_bar['Loss'].sum()))+' million liters of non revenue water. This '+str(total_bar['Loss'].sum()/total_bar['TotalInflow'].sum()*100)+'% of the total inflow')
         if (lvl=='20min'):
             total_bar['width']=0.05
         elif (lvl=='hour'):
@@ -81,7 +81,7 @@ def get_water_balance_plot(plot=0):
                    'Eindhoven_AanjGeldrop', 'Loss']
         names = ['Usage in Eindhoven', 'Total inflow', 'Inflow Welschap', 'Inflow Eindhoven', 'Total outflow',
                  'Outflow Veldhoven 1', 'Outflow Veldhoven 2', 'Outflow Nuenen', 'Outflow Geldrop',
-                 'Non registered water']
+                 'non revenue water']
         colors = ['purple', '#084594', '#2171b5', '#6baed6', '#005a32', '#a1d99b', '#74c476', '#41ab5d', '#238b45',
                   'red']
         #for data, name, color in zip (columns, names, colors):
@@ -121,7 +121,7 @@ def get_water_balance_plot(plot=0):
 
     def make_bar_chart(source):
         stacks=['Households', 'Loss']
-        names=['Usage in Eindhoven', 'Non registered water']
+        names=['Usage in Eindhoven', 'non revenue water']
         colors=['purple', 'red']
         p = figure(plot_width=1100, plot_height=300, x_axis_type='datetime',
                    tools='box_zoom, pan, xwheel_zoom, reset')#, x_range=plot1.x_range)
@@ -133,7 +133,7 @@ def get_water_balance_plot(plot=0):
         return p
 
     def update_stats(source):
-        text_box.text='In 2017 there was in total '+str(round(source['Loss'].sum()))+' million liters of non registered water. \nThis is '+str(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
+        text_box.text='In 2017 there was in total '+str(round(source['Loss'].sum()))+' million liters of non revenue water. \nThis is '+str(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
 
     def update_plot(attr, old, new):
         src_line, src_bar= get_dataset(level_select.value, axis_select.value, pattern_select.value)
@@ -178,7 +178,7 @@ def get_water_balance_plot(plot=0):
                                      ("Date", "@TimeStamp")
                                  ]))
     plot1.add_tools(hover)
-    text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non registered water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
+    text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non revenue water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
     , width=550)
     controls = column(level_select, axis_select, pattern_select)
     column1=column(controls)

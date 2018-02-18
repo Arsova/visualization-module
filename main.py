@@ -10,7 +10,8 @@ from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
 import bokeh.plotting as bk
 import pandas as pd
-from datetime import date, datetime
+import numpy as np
+from datetime import date, datetime, timedelta
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import (
         DateRangeSlider, DataTable, TableColumn, HTMLTemplateFormatter, Panel, Tabs
@@ -20,8 +21,9 @@ from misc_functions import *
 from bokeh.plotting import figure, curdoc
 from bokeh.transform import linear_cmap, log_cmap
 from bokeh.events import Tap
-from bokeh.models.glyphs import Rect
-from bokeh.models.markers import Square
+from bokeh.models.glyphs import Rect, VBar, Line
+from bokeh.models.markers import Square, Circle
+from bokeh.models.ranges import Range1d
 from calculate_water_balance import *
 ########################################################################
 # read data files and process
@@ -63,6 +65,43 @@ booster_lat_in = list(df_booster_in['Lat'])
 booster_lon_in = list(df_booster_in['Lon'])
 booster_name_in = list(df_booster_in['NAAM'])
 
+# exploration charts
+def pre_process_Eindhoven(df):
+    df['dummy'] = 1
+    df = df.groupby(["Datum","Verbruiker Omschr","Hoofdtype Melding"], as_index=False)["dummy"].count()
+    df.columns = ["Date","Type_of_facility","Reason_for_complain","Number of complains"]
+    df['Date2'] = pd.to_datetime(df['Date']).apply(lambda x: x.strftime('%Y-%m-%d'))
+
+    df_Numb_com = pd.DataFrame(df[["Date","Number of complains"]].groupby("Date", as_index=False).sum())
+    return df, df_Numb_com
+
+e_log = pd.read_csv("visualization-module/data/aggregated_day_total_2_positives.csv")
+complaints = pd.read_excel('visualization-module/data/export_occurences.xlsx')
+complaints = complaints.loc[complaints['Storingslocatie plaats']=='EINDHOVEN']
+
+Eindhoven2, df = pre_process_Eindhoven(complaints)
+
+# Create range of dates
+rng = pd.DataFrame(pd.date_range(start='01/01/2017', end='12/31/2017'), columns = ['Date'])
+
+df_dates_complaints=Eindhoven2[["Date","Number of complains"]].groupby("Date").sum()
+df_dates_complaints.reset_index(inplace=True)
+complaints_df = pd.merge(rng, df_dates_complaints, on='Date', how='outer')
+complaints_df.columns = ['Date', 'Number of complaints']
+average_usage=e_log.groupby("norm_date")["delta_total"].mean()
+average_usage=average_usage.reset_index(drop=False)
+average_usage["Date"]=pd.to_datetime(average_usage["norm_date"])
+average_usage.drop("norm_date", axis=1, inplace=True)
+average_usage_df=pd.merge(rng,average_usage, how='outer',on='Date')
+
+average_usage_df.sort_values(['Date'], inplace=True)
+average_usage_df.reset_index(drop=True, inplace=True)
+values = list(Eindhoven2['Reason_for_complain'].unique())
+
+def convert_to_datetime(x):
+    return np.array(x, dtype=np.datetime64)
+
+date_list = list(average_usage_df['Date'])
 
 ########################################################################
 # Event Handlers
@@ -107,65 +146,71 @@ def filter_usage(attr,old,new):
     val1 = str(val1[:-3])
     val1 = date.fromtimestamp(int(val1))
 
+    #this function creates dynamicly changes the heat map
+    sorce_slider.data['start_date'] = [val0]
+    sorce_slider.data['end_date'] = [val1]
+    if sorce_slider.data['start_date'] != []:
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+
     # new consumption values for the elog locations
     source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
 
 # Function to filter occurrences based on slider and checkbox selection
-def filter_occurrences(attr,old,new):
+# def filter_occurrences(attr,old,new):
+#
+#     #val1 and val2 are new slider values in timestamps
+#     # val0 = str(slider.value[0])
+#     val0 = str(source_fake_events.data['value'][0][0])
+#     val0 = val0[:-3]
+#     val0 = date.fromtimestamp(int(val0))
+#     val1 = str(source_fake_events.data['value'][0][1])
+#     val1 = val1[:-3]
+#     val1 = date.fromtimestamp(int(val1))
+#     # checkbox_group.active gives a list of indices corresponding to options selected using checkbox
+#     possible_events = [occur_type[i] for i in checkbox_group.active]
+#
+#     # create new events source to display on map, controlled by slider
+#     source.data={key:[value for i, value in enumerate(source_original.data[key])
+#     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
+#     and source_original.data["issue"][i] in possible_events]
+#     for key in source_original.data}
+#
+#     #this function creates dynamicly changes the heat map
+#     sorce_slider.data['start_date'] = [val0]
+#     sorce_slider.data['end_date'] = [val1]
+#     if sorce_slider.data['start_date'] != []:
+#         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
-    #val1 and val2 are new slider values in timestamps
-    # val0 = str(slider.value[0])
-    val0 = str(slider_events.value[0])
-    val0 = val0[:-3]
-    val0 = date.fromtimestamp(int(val0))
-    val1 = str(slider_events.value[1])
-    val1 = val1[:-3]
-    val1 = date.fromtimestamp(int(val1))
-    # checkbox_group.active gives a list of indices corresponding to options selected using checkbox
-    possible_events = [occur_type[i] for i in checkbox_group.active]
 
-    # create new events source to display on map, controlled by slider
-    source.data={key:[value for i, value in enumerate(source_original.data[key])
-    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
-    and source_original.data["issue"][i] in possible_events]
-    for key in source_original.data}
-    
-    #this function creates dynamicly changes the heat map
-    sorce_slider.data['start_date'] = [val0]
-    sorce_slider.data['end_date'] = [val1]
-    if sorce_slider.data['start_date'] != []: 
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
-    
-    
-    
+
 def filter_sources_HM(start_date, end_date):
-   
+
     def get_data_dates(CDS, start_date, end_date):
         return {
-                key:[value for i, value in enumerate(CDS.data[key]) 
-                     if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and 
+                key:[value for i, value in enumerate(CDS.data[key])
+                     if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and
                      convert_to_date_reverse(CDS.data["date"][i]) <= end_date] for key in CDS.data
                 }
-    
+
     source_heat_map_temp.data = get_data_dates(source_heat_map, start_date, end_date)
     source_data_aggregated_day_temp.data = get_data_dates(source_data_aggregated_day, start_date, end_date)
     source_rolling_temp.data = get_data_dates(source_rolling, start_date, end_date)
     source_events_temp.data = get_data_dates(source_events, start_date, end_date)
-    
-        
+
+
 
 def heat_map_stuff(df_heat, data_aggregated_day, rolling):
     source_heat_map_update = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
     source_heat_map.data = source_heat_map_update.data
     source_data_aggregated_day.data = ColumnDataSource(data=data_aggregated_day).data
     source_rolling.data = ColumnDataSource(data=rolling).data
-    
+
     #Define the temporal maps
     source_heat_map_temp.data = source_heat_map_update.data
     source_data_aggregated_day_temp.data = ColumnDataSource(data=data_aggregated_day).data
     source_rolling_temp.data = ColumnDataSource(data=rolling).data
-    
-    
+
+
 
 
 def get_new_heat_map_source(location, flag=0):
@@ -204,7 +249,7 @@ def data_table_handler(attr,old,new):
      plot_radius(lat, lon, rad)
      get_new_heat_map_source(loc[0], 0)
      get_events(lon, lat, rad, 0)
-     if sorce_slider.data['start_date'] != []:    
+     if sorce_slider.data['start_date'] != []:
          filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
 
@@ -240,14 +285,72 @@ def change_radius(attr,old,new):
     if sorce_slider.data['start_date'] != []:
         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
+def return_df_for_bar_chart(start='2017-01-01', end = '2017-12-31'):
+    start = convert_to_date_reverse(start)
+    end = convert_to_date_reverse(end)
+    values = list(Eindhoven2['Reason_for_complain'].unique())
+    values = pd.DataFrame(values)
+    values.columns = ['Reason']
+    new_df = Eindhoven2.loc[Eindhoven2['Date']>=start]
+    new_df = new_df.loc[new_df['Date']<=end]
+    new_df = new_df.groupby(['Reason_for_complain'])['Number of complains'].agg('sum')
+    new_df = pd.DataFrame(new_df)
+    new_df.columns = ['Count']
+    new_df['Reason'] = new_df.index
+    average_usage_df=pd.merge(rng,average_usage, how='outer',on='Date')
+    new_df.reset_index(inplace=True, drop=True)
+    new_df = pd.merge(values, new_df, how='outer', on='Reason')
+    new_df = new_df.fillna(0)
+    # print(new_df)
+    bar_chart_source.data['Reason'] = new_df['Reason']
+    bar_chart_source.data['Count'] = new_df['Count']
+
+
+# plot_events_usage.tool_events.on_change('geometries', cb)
+def selectedCallback(attr, old, new):
+    print(new['1d']['indices'])
+
+    index0 = min(new['1d']['indices'])
+    index1 = max(new['1d']['indices'])
+    print(index0)
+    print(index1)
+    print(len(new['1d']['indices']))
+    date0 = str(date_list[index0]).split(' ')[0]
+    date1 = str(date_list[index1]).split(' ')[0]
+    print(date0)
+    print(date1)
+    val0 = convert_to_date_reverse(date0)
+    val1 = convert_to_date_reverse(date1)
+
+    possible_events = [occur_type[i] for i in checkbox_group.active]
+
+    source.data={key:[value for i, value in enumerate(source_original.data[key])
+    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
+    and source_original.data["issue"][i] in possible_events]
+    for key in source_original.data}
+
+
+
+    return_df_for_bar_chart(date0, date1)
+
+def checkbox_filter_callback(attr, old, new):
+    val0 = sorce_slider.data['start_date'][0]
+    val1 = sorce_slider.data['end_date'][0]
+
+    possible_events = [occur_type[i] for i in checkbox_group.active]
+
+    source.data={key:[value for i, value in enumerate(source_original.data[key])
+    if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
+    and source_original.data["issue"][i] in possible_events]
+    for key in source_original.data}
 ########################################################################
 # Define data sources
 ########################################################################
 #data source to hadle the dinamic interface
 sorce_slider = bk.ColumnDataSource(
     data=dict(
-        start_date=[],
-        end_date=[]
+        start_date=[date(2017,1,1)],
+        end_date=[date(2017,12,31)]
     )
 )
 
@@ -327,6 +430,9 @@ source = bk.ColumnDataSource(
 # dummy data source to trigger real callback
 source_fake = ColumnDataSource(data=dict(value=[]))
 
+# dummy data source to trigger real callback
+source_fake_events = ColumnDataSource(data=dict(value=[]))
+
 source_heat_map_misc = bk.ColumnDataSource(
     data=dict(
         date_range_0 = [],
@@ -337,12 +443,22 @@ source_heat_map_misc = bk.ColumnDataSource(
         df_rate_max = []
     )
 )
-    
-# define sorce for the box
 
+# define sorce for the box
 source_table = bk.ColumnDataSource(data = df_table)
 
+# Source for exploration charts
+source_usage = ColumnDataSource(data=dict(
+                Date=convert_to_datetime(average_usage_df['Date']),
+                                value=average_usage_df['delta_total']
+))
 
+source_events = ColumnDataSource(data=dict(
+                Date=convert_to_datetime(complaints_df['Date']),
+                                value=complaints_df["Number of complaints"]
+))
+
+bar_chart_source = ColumnDataSource(data=dict(Reason=[], Count=[]))
 ########################################################################
 # Define widgets
 ########################################################################
@@ -358,15 +474,19 @@ slider.callback = CustomJS(args=dict(source=source_fake), code="""
 source_fake.on_change('data', filter_usage)
 
 # slider and callbacks for events
-slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
-step=1, title="Occurrence period")
-slider_events.on_change("value", filter_occurrences)
+# slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
+# step=1, title="Occurrence period", callback_policy="mouseup")
+# slider_events.callback = CustomJS(args=dict(source=source_fake_events), code="""
+#     source.data = { value: [cb_obj.value] }
+# """)
+#
+# source_fake_events.on_change("data", filter_occurrences)
 
 # checkbox for event type
 checkbox_group = CheckboxGroup(
         labels=occur_type, active=occur_default)
 
-checkbox_group.on_change("active", filter_occurrences)
+checkbox_group.on_change("active", checkbox_filter_callback)
 
 # Button to remove radius feature
 button = Button(label="Remove Radius", button_type="success")
@@ -388,7 +508,7 @@ columns_table = [
         TableColumn(field="average_outliers", title="Outliers per day"),
     ]
 
-data_table = DataTable(source = source_table, columns = columns_table, width=600, height=540)
+data_table = DataTable(source = source_table, columns = columns_table, width=600, height=800)
 source_table.on_change('selected', data_table_handler)
 
 ########################################################################
@@ -481,6 +601,68 @@ legend = Legend(items=[
 plot.add_layout(legend, "center")
 
 ########################################################################
+### Exploration charts
+########################################################################
+TOOLS_exploration = "save,pan ,reset, wheel_zoom, xbox_select"
+######################################Bar chart with line chart#########################################################
+#layout settings of chart 1
+plot_events_usage = figure(x_axis_type="datetime",
+            title="Average usage based on e_log meters and number of events in Eindhoven",
+            toolbar_location="left",
+            plot_width=1400, plot_height=300,
+            y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
+            tools=TOOLS_exploration, active_drag="xbox_select"
+            )
+
+
+plot_events_usage.grid.grid_line_alpha=1
+plot_events_usage.xaxis.axis_label = 'Date'
+plot_events_usage.yaxis.axis_label= "Number of events"
+
+# Define 1st y-axis
+plot_events_usage.yaxis.axis_label = 'Number of events'
+plot_events_usage.y_range = Range1d(start=0, end=max(df["Number of complains"]+20))
+
+# Create 2nd LHS y-axis
+plot_events_usage.extra_y_ranges['water_usage'] = Range1d(start=min(average_usage_df['delta_total']-10),
+                                           end=max(average_usage_df['delta_total']+10000))
+plot_events_usage.add_layout(LinearAxis(y_range_name='water_usage', axis_label='Water usage [l]'), 'right')
+
+line_plot = plot_events_usage.line('Date', 'value',source=source_usage, color="firebrick",
+        legend='Water usage', line_width =3, y_range_name='water_usage')
+# line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
+
+
+
+plot_events_usage.vbar(x="Date", top="value", source=source_events,
+        width=1, color="green", line_width =2, legend='Number of events')
+
+plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
+          nonselection_fill_color="firebrick", y_range_name='water_usage')
+
+return_df_for_bar_chart()
+
+source_usage.on_change('selected', selectedCallback)
+
+line_hover = HoverTool(renderers=[line_plot],
+                         tooltips=OrderedDict([
+                             ("Usage", "@value{int}"),
+                             ("Date", "@Date{%F %T}")
+                         ]),
+                      formatters={"Date": "datetime"})
+plot_events_usage.add_tools(line_hover)
+
+
+plot_events_usage.legend.location = "top_left"
+plot_events_usage.legend.click_policy="hide"
+palette = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
+plot_bar_chart_events = figure(x_range=values, plot_height=550, plot_width=700, y_axis_label = 'Number of events',
+toolbar_location=None, title="Distribution of events")
+plot_bar_chart_events.vbar(x='Reason', top='Count', width=0.9, source=bar_chart_source, legend="Reason",
+   line_color='white', fill_color=factor_cmap('Reason', palette=palette, factors=bar_chart_source.data['Reason']))
+plot_bar_chart_events.xaxis.major_label_orientation = 0.4
+plot_events_usage.min_border_top = 5
+########################################################################
 # Plot Heat map
 #######################################################################
 
@@ -521,7 +703,7 @@ colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690
 mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=1000000)
 
 TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
-p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)), 
+p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)),
                     tools=TOOLS_heat_map)
 
 heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map_temp, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
@@ -560,17 +742,17 @@ p_heat_map.add_tools(events_hover)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p_outliers = figure(title="Daily water consumptions in million of Liters", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
-p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML", 
+p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML",
                              source = source_data_aggregated_day_temp)
 
 p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',
                        source = source_rolling_temp)
-p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling_temp, line_dash = 'dashed', line_width = 3, 
+p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling_temp, line_dash = 'dashed', line_width = 3,
                          legend='moving_average', color = '#4daf4a')
 
 
 # To create intervals we can follow:
-                         
+
 p_outliers.legend.location = "top_left"
 p_outliers.legend.orientation = "horizontal"
 p_outliers.legend.click_policy= "hide"
@@ -606,17 +788,26 @@ p_outliers.add_tools(p_mean_hover)
 # Manage layout
 ########################################################################
 
+plot_events_usage.min_border_left = 100
+plot_bar_chart_events.min_border_right = 50
+plot.min_border_right = 50
 
-div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' height='60' width='250' style='float:center';>")
-div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:150%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
-image_layout = gridplot([[div1, div2]], plot_width=2500, plot_height=300, toolbar_options={'logo': None})
-tools_layout = column([slider, slider_events, checkbox_group, button, text_input])
+div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='250' style='float:center';>")
+# div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
+image_layout = gridplot([[div1]], plot_width=500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+tools_layout = column([slider, checkbox_group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
-row2 = row([tools_layout, map_plot, data_table])
-heat_map_layout = gridplot([[p_heat_map],[p_outliers]], plot_width=1400, plot_height=400, toolbar_location = 'left')
-row_final = row([row2, heat_map_layout])
-tab1 = Panel(child=row_final, title="Events-usage")
-tab2 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
-tabs = Tabs(tabs=[ tab1, tab2 ])
-final_layout = gridplot([[image_layout], [tabs]], plot_width=2500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+# row2 = row([tools_layout, map_plot, data_table])
+row1 = row([plot_events_usage, image_layout])
+row2 = row([plot_bar_chart_events, map_plot, tools_layout])
+col = column([row1, row2])
+heat_map_ = gridplot([[p_heat_map],[p_outliers]], plot_width=1000, plot_height=300, toolbar_location = 'left')
+col = gridplot([[col]], toolbar_location = 'left')
+heat_map_layout = row([heat_map_, data_table])
+# row_final = row([row2, heat_map_layout])
+tab1 = Panel(child=col, title="Events")
+tab2 = Panel(child=heat_map_layout, title="Usage")
+tab3 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
+tabs = Tabs(tabs=[ tab1, tab2, tab3 ])
+final_layout = gridplot([[tabs]], plot_width=2500, plot_height=700, toolbar_options={'logo': None, 'toolbar_location': None})
 curdoc().add_root(final_layout)
