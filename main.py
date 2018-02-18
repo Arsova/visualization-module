@@ -329,8 +329,9 @@ def selectedCallback(attr, old, new):
     and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
 
-
-
+    sorce_slider.data['start_date'] = [val0]
+    val1 = sorce_slider.data['end_date'] = [val1]
+    
     return_df_for_bar_chart(date0, date1)
 
 def checkbox_filter_callback(attr, old, new):
