@@ -294,7 +294,8 @@ def tap_tool_handler(attr,old,new):
     if sorce_slider.data['start_date'] != []:
         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
-
+    change_summary()
+    
 def reset_radius():
     l1 = []
     l2 = []
@@ -544,13 +545,13 @@ def update_checkbox_deselect_all():
     checkbox_group.active = []
 deselect_all.on_click(update_checkbox_deselect_all)
 
-group = widgetbox(select_all, deselect_all, checkbox_group)
+group = widgetbox(checkbox_group, select_all, deselect_all)
 # Button to remove radius feature
-button = Button(label="Remove Radius", button_type="success")
+button = Button(label="Remove radius")
 button.on_click(reset_radius)
 
 # Text input for radius
-text_input = TextInput(value="3", title="Distance in km:")
+text_input = TextInput(value="2", title="Enter distance in km:")
 text_input.on_change('value', change_radius)
 
 #Create table with summary
@@ -565,8 +566,8 @@ columns_table = [
         #TableColumn(field="average_outliers", title="Outliers per day"),
     ]
 
-data_table_tab1 = DataTable(source = source_table, columns = columns_table, width=310, height=300)
-data_table_tab2 = DataTable(source = source_table, columns = columns_table, width=310, height=300)
+data_table_tab1 = DataTable(source = source_table, columns = columns_table, width=310, height=280)
+data_table_tab2 = DataTable(source = source_table, columns = columns_table, width=310, height=280)
 source_table.on_change('selected', data_table_handler)
 
 
@@ -578,7 +579,8 @@ source_table.on_change('selected', data_table_handler)
 # define maps, options
 map_options = GMapOptions(lat=51.4416, lng=5.4697, map_type="terrain", zoom=12)
 plot = GMapPlot(x_range=Range1d(), y_range=Range1d(), map_options=map_options)
-plot.title.text = "Eindhoven"
+# plot.toolbar_location="left"
+# plot.title.text = "Eindhoven"
 
 # use your api key below
 plot.api_key = get_api_key()
@@ -664,8 +666,8 @@ plot.add_layout(legend, "center")
 # TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
 # ######################################Bar chart with line chart#########################################################
 
-def return_exploration_plot(df, average_usage_df, source_usage, source_events, length=1400, height=300):
-    TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
+def return_exploration_plot(df, average_usage_df, source_usage, source_events, length=1300, height=300):
+    TOOLS_exploration = "save,reset, xwheel_zoom, xbox_select, pan"
     ######################################Bar chart with line chart#########################################################
     #layout settings of chart 1
     plot_events_usage = figure(x_axis_type="datetime",
@@ -676,7 +678,7 @@ def return_exploration_plot(df, average_usage_df, source_usage, source_events, l
                 tools=TOOLS_exploration, active_drag="xbox_select"
                 )
 
-
+    plot_events_usage.toolbar.active_drag = None
     plot_events_usage.grid.grid_line_alpha=1
     plot_events_usage.xaxis.axis_label = 'Date'
     plot_events_usage.yaxis.axis_label= "Number of events"
@@ -743,7 +745,7 @@ event_dic = {'Afwijkende geur en/of smaak':'#a6cee3', 'Afwijkende kleur': '#1f78
 
 palette = [event_dic[i] for i in bar_chart_source.data['Reason']]
 
-plot_bar_chart_events = figure(y_range=values, plot_height=550, plot_width=900, x_axis_label = 'Number of events',
+plot_bar_chart_events = figure(y_range=values, plot_height=500, plot_width=800, x_axis_label = 'Number of events',
 toolbar_location=None, title="Distribution of events")
 # plot_bar_chart_events.vbar(x='Reason', top='Count', width=0.9, source=bar_chart_source, legend="Reason",
 #    line_color='white', fill_color=factor_cmap('Reason', palette=palette, factors=bar_chart_source.data['Reason']))
@@ -766,8 +768,8 @@ summary_df = pre_process_total(data=df_data_aggregated, location=1163208, summar
 
 
 data_cc = pre_process_cc(data_cc)
-data_cc_filtered = get_events(5.47255, 51.4412585, 3, flag = 1)
-plot_radius([51.4412585], [5.47255], [3])
+data_cc_filtered = get_events(5.47255, 51.4412585, 2, flag = 1)
+plot_radius([51.4412585], [5.47255], [2])
 
 start = datetime.strptime("2017-01-01", "%Y-%m-%d")
 end = datetime.strptime("2017-12-31", "%Y-%m-%d")
@@ -797,7 +799,7 @@ initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Locat
 'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
 'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
 'Max consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n'
-text_box_summary = PreText(text=initial_text, width=550)
+text_box_summary = PreText(text=initial_text, width=700, height=500)
 ########################################################################
 # Define Create graphs
 ########################################################################
@@ -897,20 +899,39 @@ p_outliers.add_tools(p_mean_hover)
 plot_bar_chart_events.min_border_right = 50
 plot.min_border_right = 50
 
+div_dummy_1 = Div(text="", width=710)
+div_dummy_2 = Div(text="", width=650)
+div_header_table1 = Div(text="<b> SELECT LOCATION </b>", width=200)
+div_header_table2 = Div(text="<b> SELECT LOCATION </b>", width=200)
+div_header_event_type = Div(text="<b> SELECT EVENT TYPE </b>", width=200)
+div_header_radius = Div(text="<b> CHANGE RADIUS </b>", width=200)
+div_header_summary = Div(text="<b> SUMMARY </b>", width=200)
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='250' style='float:center';>")
+div2 = Div(text="<img src='visualization-module/static/bokeh.jpg' margin-left:'45px' height='60' width='180' style='float:center';>")
+div3 = Div(text="<img src='visualization-module/static/jads.png' margin-left:'45px' height='80' width='210' style='float:center';>")
+div_text1 = Div(text="<b>POWERED BY</b>",)
+div_text2 = Div(text="<b>DESIGNED BY</b>",)
+
 # div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
-image_layout = gridplot([[div1]], plot_width=500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
-tools_layout = column([group, button, text_input])
-map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
+image_layout = gridplot([[div_dummy_1, div_text1, div_text2], [div_dummy_2, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+toolbar_layout = column([div_header_event_type, group])
+tools_layout = column([toolbar_layout, div_header_radius, text_input, button])
+map_plot = gridplot([[plot]], plot_width=500, plot_height=500, toolbar_options={'logo': None})
 # row2 = row([tools_layout, map_plot, data_table])
-row1 = row([plot_events_usage_tab1, data_table_tab1])
+table1_layout = column([div_header_table1, data_table_tab1])
+plot_events_usage_tab1.toolbar.active_drag = None
+plot_events_usage_tab1.toolbar_location="left"
+plot_events_usage_layout1 = gridplot([[plot_events_usage_tab1]], toolbar_options={'logo': None})
+row1 = row([plot_events_usage_layout1, table1_layout])
 row2 = row([plot_bar_chart_events, map_plot, tools_layout])
-col = column([row1, row2])
+col = column([row1, row2, image_layout])
 # heat_map_ = gridplot([p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
 tab2_row1 = row([plot_events_usage_tab2])
-heat_map_ = gridplot([ p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
-col = gridplot([[col]], toolbar_location = 'left')
-table_textbox = column([data_table_tab2,text_box_summary])
+heat_map_ = gridplot([ p_heat_map, p_outliers], ncols=1, plot_width=1300, plot_height=300, toolbar_location = 'left')
+# col = gridplot([[col]], toolbar_location = 'left)
+# plot_events_usage.toolbar.active_drag = None
+summary_layout = column([div_header_summary, text_box_summary])
+table_textbox = column([div_header_table2, data_table_tab2,summary_layout])
 heat_map_layout = row([heat_map_, table_textbox])
 tab2_final_layout = column([tab2_row1, heat_map_layout])
 # row_final = row([row2, heat_map_layout])
@@ -918,5 +939,5 @@ tab1 = Panel(child=col, title="Events")
 tab2 = Panel(child=tab2_final_layout, title="Usage")
 tab3 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
 tabs = Tabs(tabs=[ tab1, tab2, tab3 ])
-final_layout = gridplot([[tabs]], plot_width=2500, plot_height=700, toolbar_options={'logo': None, 'toolbar_location': None})
+final_layout = gridplot([[tabs]], plot_width=2500, plot_height=650, toolbar_options={'logo': None, 'toolbar_location': None})
 curdoc().add_root(final_layout)

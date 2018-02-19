@@ -10,7 +10,7 @@ from scipy.signal import savgol_filter
 
 from bokeh.io import curdoc
 from bokeh.layouts import row, column
-from bokeh.models import ColumnDataSource, DataRange1d, Select, Dropdown, CheckboxGroup, CustomJS, HoverTool, Legend, Paragraph, PreText
+from bokeh.models import ColumnDataSource, DataRange1d, Select, Dropdown, CheckboxGroup, CustomJS, HoverTool, Legend, Paragraph, PreText, Div
 from bokeh.plotting import figure
 from collections import OrderedDict
 from bokeh.command.bootstrap import main
@@ -182,8 +182,10 @@ def get_water_balance_plot(plot=0):
     , width=550)
     controls = column(level_select, axis_select, pattern_select)
     column1=column(controls)
+    div_header_summary = Div(text="<b> SUMMARY </b>", width=200)
     row1=row(children=[plot1, column1])
-    row2=row(children=[plot2, text_box])
+    summary_layout = column([div_header_summary, text_box])
+    row2=row(children=[plot2, summary_layout])
     layout=column(row1,row2)
     if plot == 1:
         curdoc().add_root(layout)
