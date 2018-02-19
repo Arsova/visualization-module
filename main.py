@@ -212,17 +212,18 @@ def filter_sources_HM(start_date, end_date):
 
 
 
-def heat_map_stuff(df_heat, data_aggregated_day, rolling):
+def heat_map_stuff(df_heat, data_aggregated_day, rolling, summary_dis):
     source_heat_map_update = ColumnDataSource(data=df_heat.reset_index().fillna('NaN').to_dict(orient="list"))
     source_heat_map.data = source_heat_map_update.data
     source_data_aggregated_day.data = ColumnDataSource(data=data_aggregated_day).data
     source_rolling.data = ColumnDataSource(data=rolling).data
+    source_summary_dis.data = ColumnDataSource(data=summary_dis).data
 
     #Define the temporal maps
     source_heat_map_temp.data = source_heat_map_update.data
     source_data_aggregated_day_temp.data = ColumnDataSource(data=data_aggregated_day).data
     source_rolling_temp.data = ColumnDataSource(data=rolling).data
-
+    source_summary_dis_temp.data = ColumnDataSource(data=summary_dis).data
 
 
 
@@ -230,11 +231,12 @@ def get_new_heat_map_source(location, flag=0):
     data = pre_process_hour_consuption(location)
     df_heat = pd.DataFrame(data.stack(), columns=['rate']).reset_index()
     data_aggregated_day_local, rolling_local = pre_process_total(df_data_aggregated, location, 30)
+    summary_dis = pre_process_total(df_data_aggregated, location, summary = True)
 
     if flag == 1:
         return df_heat
     else:
-        heat_map_stuff(df_heat, data_aggregated_day_local, rolling_local)
+        heat_map_stuff(df_heat, data_aggregated_day_local, rolling_local, summary_dis)
 
 
 def get_events(lon, lat, radius, flag = 0):
@@ -245,7 +247,14 @@ def get_events(lon, lat, radius, flag = 0):
         source_events.data = ColumnDataSource(data = data_cc_filtered_local).data
         source_events_temp.data = ColumnDataSource(data = data_cc_filtered_local).data
 
-
+def change_summary():
+    text_box_summary.text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+    'Average consumption (in litres): ' + str(source_summary_dis_temp.data['average_consuption_day_liters'][0]) + '\n' + \
+    'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
+    'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
+    'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
+    'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
+    'Max consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n'
 def data_table_handler(attr,old,new):
      #Get data
      ind = new['1d']['indices'][0]
@@ -262,10 +271,13 @@ def data_table_handler(attr,old,new):
      plot_radius(lat, lon, rad)
      get_new_heat_map_source(loc[0], 0)
      get_events(lon, lat, rad, 0)
+
+
+
      if sorce_slider.data['start_date'] != []:
          filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
-
+     change_summary()
 
 
 def tap_tool_handler(attr,old,new):
@@ -558,6 +570,7 @@ data_table_tab2 = DataTable(source = source_table, columns = columns_table, widt
 source_table.on_change('selected', data_table_handler)
 
 
+
 ########################################################################
 # Define map layput
 ########################################################################
@@ -650,40 +663,7 @@ plot.add_layout(legend, "center")
 ########################################################################
 # TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
 # ######################################Bar chart with line chart#########################################################
-# #layout settings of chart 1
-# plot_events_usage = figure(x_axis_type="datetime",
-#             title="Average usage based on e_log meters and number of events in Eindhoven",
-#             toolbar_location="left",
-#             plot_width=1400, plot_height=300,
-#             y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
-#             tools=TOOLS_exploration, active_drag="xbox_select"
-#             )
-#
-#
-# plot_events_usage.grid.grid_line_alpha=1
-# plot_events_usage.xaxis.axis_label = 'Date'
-# plot_events_usage.yaxis.axis_label= "Number of events"
-#
-# # Define 1st y-axis
-# plot_events_usage.yaxis.axis_label = 'Number of events'
-# plot_events_usage.y_range = Range1d(start=0, end=max(df["Number of complains"]+20))
-#
-# # Create 2nd LHS y-axis
-# plot_events_usage.extra_y_ranges['water_usage'] = Range1d(start=min(average_usage_df['delta_total']-10),
-#                                            end=max(average_usage_df['delta_total']+10000))
-# plot_events_usage.add_layout(LinearAxis(y_range_name='water_usage', axis_label='Water usage [l]'), 'right')
-#
-# line_plot = plot_events_usage.line('Date', 'value',source=source_usage, color="firebrick",
-#         legend='Water usage', line_width =3, y_range_name='water_usage')
-# # line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
-#
-#
-#
-# plot_events_usage.vbar(x="Date", top="value", source=source_events,
-#         width=1, color="green", line_width =2, legend='Number of events')
-#
-# plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
-#           nonselection_fill_color="firebrick", y_range_name='water_usage')
+
 def return_exploration_plot(df, average_usage_df, source_usage, source_events, length=1400, height=300):
     TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
     ######################################Bar chart with line chart#########################################################
@@ -782,6 +762,9 @@ plot_bar_chart_events.xaxis.major_label_orientation = 0.0
 ########################################################################
 df_heat1 = get_new_heat_map_source(location=1163208, flag=1)
 data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
+summary_df = pre_process_total(data=df_data_aggregated, location=1163208, summary = True)
+
+
 data_cc = pre_process_cc(data_cc)
 data_cc_filtered = get_events(5.47255, 51.4412585, 3, flag = 1)
 plot_radius([51.4412585], [5.47255], [3])
@@ -797,13 +780,24 @@ source_heat_map = ColumnDataSource(data=df_heat1)
 source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
 source_rolling = ColumnDataSource(data = rolling)
 source_events = ColumnDataSource(data = data_cc_filtered)
+source_summary_dis = ColumnDataSource(data=summary_df)
 
 source_heat_map_temp = ColumnDataSource(data=df_heat1)
 source_data_aggregated_day_temp = ColumnDataSource(data=data_aggregated_day)
 source_rolling_temp = ColumnDataSource(data = rolling)
 source_events_temp = ColumnDataSource(data = data_cc_filtered)
-
-
+source_summary_dis_temp = ColumnDataSource(data=summary_df)
+print('Summary dataframe:')
+print(source_summary_dis_temp.data)
+#text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
+initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+'Average consumption (in litres): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
+'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
+'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
+'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
+'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
+'Max consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n'
+text_box_summary = PreText(text=initial_text, width=550)
 ########################################################################
 # Define Create graphs
 ########################################################################
@@ -916,7 +910,8 @@ col = column([row1, row2])
 tab2_row1 = row([plot_events_usage_tab2])
 heat_map_ = gridplot([ p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
 col = gridplot([[col]], toolbar_location = 'left')
-heat_map_layout = row([heat_map_, data_table_tab2])
+table_textbox = column([data_table_tab2,text_box_summary])
+heat_map_layout = row([heat_map_, table_textbox])
 tab2_final_layout = column([tab2_row1, heat_map_layout])
 # row_final = row([row2, heat_map_layout])
 tab1 = Panel(child=col, title="Events")
