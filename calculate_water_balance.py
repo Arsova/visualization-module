@@ -180,8 +180,9 @@ def get_water_balance_plot(plot=0):
     plot1.add_tools(hover)
     text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non revenue water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
     , width=550)
+    div_header_options = Div(text="<b> SELECT OPTIONS </b>", width=200)
     controls = column(level_select, axis_select, pattern_select)
-    column1=column(controls)
+    column1=column([div_header_options, controls])
     div_header_summary = Div(text="<b> SUMMARY </b>", width=200)
     row1=row(children=[plot1, column1])
     summary_layout = column([div_header_summary, text_box])
