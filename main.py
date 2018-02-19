@@ -55,7 +55,7 @@ lon_elog=list(df_elog_coor['Lon'])
 place_elog=list(df_elog_coor['Place'])
 location_elog=list(df_elog_coor['Location'])
 zipcode_elog=list(df_elog_coor['Zipcode'])
-value_elog = return_value_list(locations=location_elog)
+value_elog, outliers_color = return_value_list(locations=location_elog)
 
 booster_lat_out = list(df_booster_out['Lat'])
 booster_lon_out = list(df_booster_out['Lon'])
@@ -153,7 +153,7 @@ def filter_usage(attr,old,new):
         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
     # new consumption values for the elog locations
-    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
+    source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
 
 # Function to filter occurrences based on slider and checkbox selection
 # def filter_occurrences(attr,old,new):
@@ -185,17 +185,29 @@ def filter_usage(attr,old,new):
 
 def filter_sources_HM(start_date, end_date):
 
-    def get_data_dates(CDS, start_date, end_date):
-        return {
-                key:[value for i, value in enumerate(CDS.data[key])
-                     if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and
-                     convert_to_date_reverse(CDS.data["date"][i]) <= end_date] for key in CDS.data
-                }
+    def get_data_dates(CDS, start_date, end_date, get_events_heatmap = False):
+        if get_events_heatmap:
+            possible_events = [occur_type[i] for i in checkbox_group.active]
+            print(possible_events)
+            return {
+                    key:[value for i, value in enumerate(CDS.data[key])
+                         if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and
+                         convert_to_date_reverse(CDS.data["date"][i]) <= end_date and
+                         CDS.data["Hoofdtype Melding"][i] in possible_events] for key in CDS.data
+                    }
+
+        else:
+
+            return {
+                    key:[value for i, value in enumerate(CDS.data[key])
+                         if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and
+                         convert_to_date_reverse(CDS.data["date"][i]) <= end_date] for key in CDS.data
+                    }
 
     source_heat_map_temp.data = get_data_dates(source_heat_map, start_date, end_date)
     source_data_aggregated_day_temp.data = get_data_dates(source_data_aggregated_day, start_date, end_date)
     source_rolling_temp.data = get_data_dates(source_rolling, start_date, end_date)
-    source_events_temp.data = get_data_dates(source_events, start_date, end_date)
+    source_events_temp.data = get_data_dates(CDS=source_events, start_date=start_date, end_date=end_date, get_events_heatmap = True)
 
 
 
@@ -341,7 +353,7 @@ def selectedCallback(attr, old, new):
         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
 
     # new consumption values for the elog locations
-    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
+    source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
 
     return_df_for_bar_chart(date0, date1)
 
@@ -355,6 +367,11 @@ def checkbox_filter_callback(attr, old, new):
     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
     and source_original.data["issue"][i] in possible_events]
     for key in source_original.data}
+
+    if sorce_slider.data['start_date'] != []:
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+
+
 ########################################################################
 # Define data sources
 ########################################################################
@@ -401,7 +418,8 @@ source_elog_original = bk.ColumnDataSource(
         place_elog=place_elog,
         location_elog=location_elog,
         zipcode_elog=zipcode_elog,
-        value_elog = value_elog
+        value_elog = value_elog,
+        color = outliers_color
     )
 )
 
@@ -413,7 +431,8 @@ source_elog = bk.ColumnDataSource(
         place_elog=place_elog,
         location_elog=location_elog,
         zipcode_elog=zipcode_elog,
-        value_elog = value_elog
+        value_elog = value_elog,
+        color = outliers_color
     )
 )
 
@@ -500,6 +519,19 @@ checkbox_group = CheckboxGroup(
 
 checkbox_group.on_change("active", checkbox_filter_callback)
 
+select_all = Button(label="select all")
+
+def update_checkbox_select_all():
+    checkbox_group.active = occur_default
+select_all.on_click(update_checkbox_select_all)
+
+deselect_all = Button(label="deselect all")
+
+def update_checkbox_deselect_all():
+    checkbox_group.active = []
+deselect_all.on_click(update_checkbox_deselect_all)
+
+group = widgetbox(select_all, deselect_all, checkbox_group)
 # Button to remove radius feature
 button = Button(label="Remove Radius", button_type="success")
 button.on_click(reset_radius)
@@ -513,15 +545,17 @@ text_input.on_change('value', change_radius)
 #https://github.com/bokeh/bokeh/wiki/Filterable-Data-Source
 
 columns_table = [
-        TableColumn(field="Location", title="Location"),
-        TableColumn(field="Place", title="Place"),
-        TableColumn(field="number_days", title="Number of days recorded"),
-        TableColumn(field="number_outliers", title="Number of outliers"),
-        TableColumn(field="average_outliers", title="Outliers per day"),
+        TableColumn(field="Location", title="Location", width=80),
+        TableColumn(field="Place", title="Place", width=230),
+        #TableColumn(field="number_days", title="Number of days recorded"),
+        #TableColumn(field="number_outliers", title="Number of outliers"),
+        #TableColumn(field="average_outliers", title="Outliers per day"),
     ]
 
-data_table = DataTable(source = source_table, columns = columns_table, width=600, height=800)
+data_table_tab1 = DataTable(source = source_table, columns = columns_table, width=310, height=300)
+data_table_tab2 = DataTable(source = source_table, columns = columns_table, width=310, height=800)
 source_table.on_change('selected', data_table_handler)
+
 
 ########################################################################
 # Define map layput
@@ -544,20 +578,18 @@ triangle_event = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alph
 glyph_triangle = plot.add_glyph(source, triangle_event)
 
 # circle glyphs on the map
-circle_elog = Circle(x="lon_elog", y="lat_elog", size=12, fill_color=log_cmap("value_elog",
-palette = ['#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'],
-low=min(source_elog.data["value_elog"]), high=max(source_elog.data["value_elog"]), nan_color='green'),
-fill_alpha=0.5, line_color=None, name="elog_locations")
+circle_elog = Circle(x="lon_elog", y="lat_elog", size=12, fill_color="color",
+fill_alpha=0.8, line_color=None, name="elog_locations")
 glyph_circle = plot.add_glyph(source_elog, circle_elog)
 
-circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.5, line_color='black')
+circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.3, line_color='black')
 glyph_circle_radius = plot.add_glyph(source_radius_circle, circle_radius)
 
-square_out = Square(x="booster_lon", y="booster_lat", size=15, fill_color="brown", line_color=None)
-glyph_square_out = plot.add_glyph(source_booster_out, square_out)
-
-square_in = Square(x="booster_lon", y="booster_lat", size=15, fill_color="green", line_color=None)
-glyph_square_in = plot.add_glyph(source_booster_in, square_in)
+# square_out = Square(x="booster_lon", y="booster_lat", size=15, fill_color="brown", line_color=None)
+# glyph_square_out = plot.add_glyph(source_booster_out, square_out)
+#
+# square_in = Square(x="booster_lon", y="booster_lat", size=15, fill_color="green", line_color=None)
+# glyph_square_in = plot.add_glyph(source_booster_in, square_in)
 
 ########################################################################
 # Other misc tools: hovers, taps, etc
@@ -586,18 +618,18 @@ circle_hover = HoverTool(renderers=[glyph_circle],
 plot.add_tools(circle_hover)
 
 # Hover tool for booster out
-booster_out_hover = HoverTool(renderers=[glyph_square_out],
-                         tooltips=OrderedDict([
-                             ("Location", "@booster_name")
-                         ]))
-plot.add_tools(booster_out_hover)
-
-# Hover tool for booster in
-booster_in_hover = HoverTool(renderers=[glyph_square_in],
-                         tooltips=OrderedDict([
-                             ("Location", "@booster_name")
-                         ]))
-plot.add_tools(booster_in_hover)
+# booster_out_hover = HoverTool(renderers=[glyph_square_out],
+#                          tooltips=OrderedDict([
+#                              ("Location", "@booster_name")
+#                          ]))
+# plot.add_tools(booster_out_hover)
+#
+# # Hover tool for booster in
+# booster_in_hover = HoverTool(renderers=[glyph_square_in],
+#                          tooltips=OrderedDict([
+#                              ("Location", "@booster_name")
+#                          ]))
+# plot.add_tools(booster_in_hover)
 
 # Tap tool for elog circles
 tap_tool = TapTool(names=['elog_locations'], renderers=[glyph_circle])
@@ -606,16 +638,16 @@ glyph_circle.data_source.on_change('selected', tap_tool_handler)
 # Add legend
 legend = Legend(items=[
     LegendItem(label="elog_locations"   , renderers=[glyph_circle]),
-    LegendItem(label="occurrences" , renderers=[glyph_triangle]),
-    LegendItem(label="Inflow" , renderers=[glyph_square_in]),
-    LegendItem(label="Outflow" , renderers=[glyph_square_out])
+    LegendItem(label="occurrences" , renderers=[glyph_triangle])
+    # LegendItem(label="Inflow" , renderers=[glyph_square_in]),
+    # LegendItem(label="Outflow" , renderers=[glyph_square_out])
 ], orientation="vertical", click_policy="hide")
 plot.add_layout(legend, "center")
 
 ########################################################################
 ### Exploration charts
 ########################################################################
-TOOLS_exploration = "save,pan ,reset, wheel_zoom, xbox_select"
+TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
 ######################################Bar chart with line chart#########################################################
 #layout settings of chart 1
 plot_events_usage = figure(x_axis_type="datetime",
@@ -667,13 +699,24 @@ plot_events_usage.add_tools(line_hover)
 
 plot_events_usage.legend.location = "top_left"
 plot_events_usage.legend.click_policy="hide"
-palette = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
-plot_bar_chart_events = figure(x_range=values, plot_height=550, plot_width=700, y_axis_label = 'Number of events',
+# palette = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
+
+event_dic = {'Afwijkende geur en/of smaak':'#a6cee3', 'Afwijkende kleur': '#1f78b4', 'Afwijkende temperatuur': '#b2df8a',
+             'Afwijkende waterdruk':'#33a02c', 'Geen water':'#fb9a99', 'Geluid in de (drink)waterinstallatie':'#e31a1c',
+             'Lekkage binnenshuis':'#fdbf6f', 'Lekkage buitenshuis':'#ff7f00', 'Meteropstelling (geen lekkage)':'#cab2d6',
+             'Monteursinzet n.a.v. eerdere melding': '#6a3d9a'}
+
+palette = [event_dic[i] for i in bar_chart_source.data['Reason']]
+
+plot_bar_chart_events = figure(y_range=values, plot_height=550, plot_width=900, x_axis_label = 'Number of events',
 toolbar_location=None, title="Distribution of events")
-plot_bar_chart_events.vbar(x='Reason', top='Count', width=0.9, source=bar_chart_source, legend="Reason",
+# plot_bar_chart_events.vbar(x='Reason', top='Count', width=0.9, source=bar_chart_source, legend="Reason",
+#    line_color='white', fill_color=factor_cmap('Reason', palette=palette, factors=bar_chart_source.data['Reason']))
+plot_bar_chart_events.hbar(y='Reason', right='Count', height=0.9, source=bar_chart_source, legend="Reason",
    line_color='white', fill_color=factor_cmap('Reason', palette=palette, factors=bar_chart_source.data['Reason']))
-plot_bar_chart_events.xaxis.major_label_orientation = 0.4
-plot_events_usage.min_border_top = 5
+
+plot_bar_chart_events.xaxis.major_label_orientation = 0.0
+plot_events_usage.min_border_top = 0
 ########################################################################
 # Plot Heat map
 #######################################################################
@@ -714,12 +757,12 @@ colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690
 #     mapper = LinearColorMapper(palette=colors, low=df.rate.min(), high=df.rate.max())
 mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=1000000)
 
-TOOLS_heat_map = "save,pan ,reset, wheel_zoom"
+TOOLS_heat_map = "save,pan ,reset, xwheel_zoom"
 p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)),
                     tools=TOOLS_heat_map)
 
 heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map_temp, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
-p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events_temp, color = 'color', size= 12, line_color="white")
+p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events_temp, color = 'color', size= 12, line_color="black")
 
 
 color_bar = ColorBar(color_mapper=mapper_heat_map, border_line_color=None,label_standoff=12, location=(0, 0))
@@ -800,22 +843,22 @@ p_outliers.add_tools(p_mean_hover)
 # Manage layout
 ########################################################################
 
-plot_events_usage.min_border_left = 100
+plot_events_usage.min_border_left = 0
 plot_bar_chart_events.min_border_right = 50
 plot.min_border_right = 50
 
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='250' style='float:center';>")
 # div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
 image_layout = gridplot([[div1]], plot_width=500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
-tools_layout = column([checkbox_group, button, text_input])
+tools_layout = column([group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
 # row2 = row([tools_layout, map_plot, data_table])
-row1 = row([plot_events_usage, image_layout])
+row1 = row([plot_events_usage, data_table_tab1])
 row2 = row([plot_bar_chart_events, map_plot, tools_layout])
 col = column([row1, row2])
 heat_map_ = gridplot([[p_heat_map],[p_outliers]], plot_width=1000, plot_height=300, toolbar_location = 'left')
 col = gridplot([[col]], toolbar_location = 'left')
-heat_map_layout = row([heat_map_, data_table])
+heat_map_layout = row([heat_map_, data_table_tab2])
 # row_final = row([row2, heat_map_layout])
 tab1 = Panel(child=col, title="Events")
 tab2 = Panel(child=heat_map_layout, title="Usage")

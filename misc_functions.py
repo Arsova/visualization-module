@@ -54,6 +54,15 @@ def get_color(value):
         else:
             return '#08306b'
 
+def classify_out(val_list):
+
+    mean = np.mean(val_list)
+    std = np.std(val_list)
+    out = ['#8c510a' if i>(2*std) else '#2166ac' for i in val_list]
+    print(out)
+    return out
+
+
 # returns new aggregaate consumption values
 def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     value_list = []
@@ -69,7 +78,9 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
         else:
             consumption = df_temp['delta_total'].sum()
             value_list.append(consumption)
-    return value_list
+
+    outliers = classify_out(value_list)
+    return value_list, outliers
 
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -138,10 +149,10 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
     return data, rolling
 
 def pre_process_cc(data_cc, date_range = ["2017-01-01", "2017-12-31"]):
-    event_dic = {'Afwijkende geur en-of smaak':'#a50026', 'Afwijkende kleur': '#d73027', 'Afwijkende temperatuur': '#f46d43',
-                 'Afwijkende waterdruk':'#fdae61', 'Geen water':'#fee08b', 'Geluid in de (drink)waterinstallatie':'#ffffbf',
-                 'Lekkage binnenshuis':'#d9ef8b', 'Lekkage buitenshuis':'#a6d96a', 'Meteropstelling (geen lekkage)':'#66bd63',
-                 'Monteursinzet n.a.v. eerdere melding': '#1a9850'}
+    event_dic = {'Afwijkende geur en-of smaak':'#a6cee3', 'Afwijkende kleur': '#1f78b4', 'Afwijkende temperatuur': '#b2df8a',
+             'Afwijkende waterdruk':'#33a02c', 'Geen water':'#fb9a99', 'Geluid in de (drink)waterinstallatie':'#e31a1c',
+             'Lekkage binnenshuis':'#fdbf6f', 'Lekkage buitenshuis':'#ff7f00', 'Meteropstelling (geen lekkage)':'#cab2d6',
+             'Monteursinzet n.a.v. eerdere melding': '#6a3d9a'}
 
     data_cc['color'] = data_cc['Hoofdtype Melding'].apply(lambda x: event_dic[x])
     data_cc['Datum'] = pd.to_datetime(data_cc['Datum'])
