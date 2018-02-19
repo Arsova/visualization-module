@@ -309,14 +309,19 @@ def return_df_for_bar_chart(start='2017-01-01', end = '2017-12-31'):
 # plot_events_usage.tool_events.on_change('geometries', cb)
 def selectedCallback(attr, old, new):
     print(new['1d']['indices'])
+    try:
+        index0 = min(new['1d']['indices'])
+        index1 = max(new['1d']['indices'])
+        print(index0)
+        print(index1)
+        print(len(new['1d']['indices']))
+        date0 = str(date_list[index0]).split(' ')[0]
+        date1 = str(date_list[index1]).split(' ')[0]
 
-    index0 = min(new['1d']['indices'])
-    index1 = max(new['1d']['indices'])
-    print(index0)
-    print(index1)
-    print(len(new['1d']['indices']))
-    date0 = str(date_list[index0]).split(' ')[0]
-    date1 = str(date_list[index1]).split(' ')[0]
+    except:
+        date0 = '2017-01-01'
+        date1 = '2017-12-31'
+
     print(date0)
     print(date1)
     val0 = convert_to_date_reverse(date0)
@@ -330,8 +335,14 @@ def selectedCallback(attr, old, new):
     for key in source_original.data}
 
     sorce_slider.data['start_date'] = [val0]
-    val1 = sorce_slider.data['end_date'] = [val1]
-    
+    sorce_slider.data['end_date'] = [val1]
+
+    if sorce_slider.data['start_date'] != []:
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+
+    # new consumption values for the elog locations
+    source_elog.data['value_elog'] = return_value_list(location_elog, str(val0), str(val1))
+
     return_df_for_bar_chart(date0, date1)
 
 def checkbox_filter_callback(attr, old, new):
@@ -796,7 +807,7 @@ plot.min_border_right = 50
 div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='250' style='float:center';>")
 # div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
 image_layout = gridplot([[div1]], plot_width=500, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
-tools_layout = column([slider, checkbox_group, button, text_input])
+tools_layout = column([checkbox_group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
 # row2 = row([tools_layout, map_plot, data_table])
 row1 = row([plot_events_usage, image_layout])
