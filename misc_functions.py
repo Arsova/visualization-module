@@ -82,6 +82,15 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
     outliers = classify_out(value_list)
     return value_list, outliers
 
+def return_filtered_locations(df_eLoc_coor):
+    loc_to_delete = [1333901, 1333934,1334033,1335520,1338495,1352181,2187602,1404804,1581850,1590265,
+1591055,1591356,2082468,1777541,1778765,1784273,1784470,1788300,1788548,1788785,1788906,1803450,1805455,
+1805822,1806880,1814060,1816705,2039867,1862885,1876147,1880014]
+
+    df_eLoc_coor = df_eLoc_coor[~df_eLoc_coor['Location'].isin(loc_to_delete)]
+    print('Size of df_elog_coor: ')
+    print(len(df_eLoc_coor))
+    return df_eLoc_coor
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -188,6 +197,15 @@ def get_api_key():
     with open('visualization-module/data/api_key.txt') as infile:
         for line in infile:
             return str(line)
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     data_cc = pd.read_csv('visualization-module/data/Data_heat_maps/Customer Contacts/limited_occ_with_gps_time.csv', sep = ';')

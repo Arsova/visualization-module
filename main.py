@@ -4,7 +4,7 @@ from bokeh.models import (
 GMapPlot, GMapOptions, ColumnDataSource, Circle, Triangle, Range1d, PanTool, WheelZoomTool, HoverTool,
 ResetTool, Legend, LegendItem, CheckboxGroup, TapTool, Button, TextInput, LinearColorMapper,
     BasicTicker, PrintfTickFormatter, ColorBar, BoxAnnotation, Band, LogColorMapper, FuncTickFormatter,
-PrintfTickFormatter, NumeralTickFormatter, LinearAxis, Range1d, Legend, Div, BoxAnnotation, Slider
+PrintfTickFormatter, NumeralTickFormatter, LinearAxis, Range1d, Legend, Div, BoxAnnotation, Slider, PreText
 )
 from bokeh.models.widgets.sliders import DateRangeSlider
 from collections import OrderedDict
@@ -29,6 +29,7 @@ from calculate_water_balance import *
 # read data files and process
 ########################################################################
 df_elog_coor = pd.read_csv('visualization-module/data/coordinates-codes-updated.csv', delimiter=';')
+df_elog_coor = return_filtered_locations(df_elog_coor)
 # limited_occ_with_gps_new.csv (replace / with -)
 data_cc = pd.read_csv('visualization-module/data/limited_occ_with_gps_time.csv', delimiter=';')
 #booster location data
@@ -553,7 +554,7 @@ columns_table = [
     ]
 
 data_table_tab1 = DataTable(source = source_table, columns = columns_table, width=310, height=300)
-data_table_tab2 = DataTable(source = source_table, columns = columns_table, width=310, height=800)
+data_table_tab2 = DataTable(source = source_table, columns = columns_table, width=310, height=300)
 source_table.on_change('selected', data_table_handler)
 
 
@@ -683,14 +684,14 @@ plot.add_layout(legend, "center")
 #
 # plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
 #           nonselection_fill_color="firebrick", y_range_name='water_usage')
-def return_exploration_plot(df, average_usage_df, source_usage, source_events):
+def return_exploration_plot(df, average_usage_df, source_usage, source_events, length=1400, height=300):
     TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
     ######################################Bar chart with line chart#########################################################
     #layout settings of chart 1
     plot_events_usage = figure(x_axis_type="datetime",
                 title="Average usage based on e_log meters and number of events in Eindhoven",
                 toolbar_location="left",
-                plot_width=1400, plot_height=300,
+                plot_width=length, plot_height=height,
                 y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
                 tools=TOOLS_exploration, active_drag="xbox_select"
                 )
@@ -735,7 +736,7 @@ def return_exploration_plot(df, average_usage_df, source_usage, source_events):
 
 
 plot_events_usage_tab1 = return_exploration_plot(df, average_usage_df, source_usage, source_events)
-plot_events_usage_tab2 = return_exploration_plot(df, average_usage_df, source_usage, source_events)
+plot_events_usage_tab2 = return_exploration_plot(df, average_usage_df, source_usage, source_events, length=1650, height=200)
 
 return_df_for_bar_chart()
 
@@ -871,6 +872,7 @@ p_outliers.xaxis.axis_label = None
 p_outliers.yaxis.axis_label = 'Million of Liters'
 p_outliers.xaxis.major_label_orientation = 3.1416 / 3
 p_outliers.x_range = p_heat_map.x_range# Same axes as the heatMap
+# p_outliers.x_range = plot_events_usage_tab2.x_range
 p_outliers.xaxis.formatter = FuncTickFormatter(code=""" var labels = %s; return labels[tick];""" % dates_list)
 
 
@@ -911,12 +913,14 @@ row1 = row([plot_events_usage_tab1, data_table_tab1])
 row2 = row([plot_bar_chart_events, map_plot, tools_layout])
 col = column([row1, row2])
 # heat_map_ = gridplot([p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
-heat_map_ = gridplot([plot_events_usage_tab2, p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
+tab2_row1 = row([plot_events_usage_tab2])
+heat_map_ = gridplot([ p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
 col = gridplot([[col]], toolbar_location = 'left')
 heat_map_layout = row([heat_map_, data_table_tab2])
+tab2_final_layout = column([tab2_row1, heat_map_layout])
 # row_final = row([row2, heat_map_layout])
 tab1 = Panel(child=col, title="Events")
-tab2 = Panel(child=heat_map_layout, title="Usage")
+tab2 = Panel(child=tab2_final_layout, title="Usage")
 tab3 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
 tabs = Tabs(tabs=[ tab1, tab2, tab3 ])
 final_layout = gridplot([[tabs]], plot_width=2500, plot_height=700, toolbar_options={'logo': None, 'toolbar_location': None})
