@@ -647,60 +647,114 @@ plot.add_layout(legend, "center")
 ########################################################################
 ### Exploration charts
 ########################################################################
-TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
-######################################Bar chart with line chart#########################################################
-#layout settings of chart 1
-plot_events_usage = figure(x_axis_type="datetime",
-            title="Average usage based on e_log meters and number of events in Eindhoven",
-            toolbar_location="left",
-            plot_width=1400, plot_height=300,
-            y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
-            tools=TOOLS_exploration, active_drag="xbox_select"
-            )
+# TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
+# ######################################Bar chart with line chart#########################################################
+# #layout settings of chart 1
+# plot_events_usage = figure(x_axis_type="datetime",
+#             title="Average usage based on e_log meters and number of events in Eindhoven",
+#             toolbar_location="left",
+#             plot_width=1400, plot_height=300,
+#             y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
+#             tools=TOOLS_exploration, active_drag="xbox_select"
+#             )
+#
+#
+# plot_events_usage.grid.grid_line_alpha=1
+# plot_events_usage.xaxis.axis_label = 'Date'
+# plot_events_usage.yaxis.axis_label= "Number of events"
+#
+# # Define 1st y-axis
+# plot_events_usage.yaxis.axis_label = 'Number of events'
+# plot_events_usage.y_range = Range1d(start=0, end=max(df["Number of complains"]+20))
+#
+# # Create 2nd LHS y-axis
+# plot_events_usage.extra_y_ranges['water_usage'] = Range1d(start=min(average_usage_df['delta_total']-10),
+#                                            end=max(average_usage_df['delta_total']+10000))
+# plot_events_usage.add_layout(LinearAxis(y_range_name='water_usage', axis_label='Water usage [l]'), 'right')
+#
+# line_plot = plot_events_usage.line('Date', 'value',source=source_usage, color="firebrick",
+#         legend='Water usage', line_width =3, y_range_name='water_usage')
+# # line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
+#
+#
+#
+# plot_events_usage.vbar(x="Date", top="value", source=source_events,
+#         width=1, color="green", line_width =2, legend='Number of events')
+#
+# plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
+#           nonselection_fill_color="firebrick", y_range_name='water_usage')
+def return_exploration_plot(df, average_usage_df, source_usage, source_events):
+    TOOLS_exploration = "save,pan ,reset, xwheel_zoom, xbox_select"
+    ######################################Bar chart with line chart#########################################################
+    #layout settings of chart 1
+    plot_events_usage = figure(x_axis_type="datetime",
+                title="Average usage based on e_log meters and number of events in Eindhoven",
+                toolbar_location="left",
+                plot_width=1400, plot_height=300,
+                y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
+                tools=TOOLS_exploration, active_drag="xbox_select"
+                )
 
 
-plot_events_usage.grid.grid_line_alpha=1
-plot_events_usage.xaxis.axis_label = 'Date'
-plot_events_usage.yaxis.axis_label= "Number of events"
+    plot_events_usage.grid.grid_line_alpha=1
+    plot_events_usage.xaxis.axis_label = 'Date'
+    plot_events_usage.yaxis.axis_label= "Number of events"
 
-# Define 1st y-axis
-plot_events_usage.yaxis.axis_label = 'Number of events'
-plot_events_usage.y_range = Range1d(start=0, end=max(df["Number of complains"]+20))
+    # Define 1st y-axis
+    plot_events_usage.yaxis.axis_label = 'Number of events'
+    plot_events_usage.y_range = Range1d(start=0, end=max(df["Number of complains"]+20))
 
-# Create 2nd LHS y-axis
-plot_events_usage.extra_y_ranges['water_usage'] = Range1d(start=min(average_usage_df['delta_total']-10),
-                                           end=max(average_usage_df['delta_total']+10000))
-plot_events_usage.add_layout(LinearAxis(y_range_name='water_usage', axis_label='Water usage [l]'), 'right')
+    # Create 2nd LHS y-axis
+    plot_events_usage.extra_y_ranges['water_usage'] = Range1d(start=min(average_usage_df['delta_total']-10),
+                                               end=max(average_usage_df['delta_total']+10000))
+    plot_events_usage.add_layout(LinearAxis(y_range_name='water_usage', axis_label='Water usage [l]'), 'right')
 
-line_plot = plot_events_usage.line('Date', 'value',source=source_usage, color="firebrick",
-        legend='Water usage', line_width =3, y_range_name='water_usage')
-# line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
+    line_plot = plot_events_usage.line('Date', 'value',source=source_usage, color="firebrick",
+            legend='Water usage', line_width =3, y_range_name='water_usage')
+    # line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
 
 
 
-plot_events_usage.vbar(x="Date", top="value", source=source_events,
-        width=1, color="green", line_width =2, legend='Number of events')
+    plot_events_usage.vbar(x="Date", top="value", source=source_events,
+            width=1, color="green", line_width =2, legend='Number of events')
 
-plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
-          nonselection_fill_color="firebrick", y_range_name='water_usage')
+    plot_events_usage.circle('Date', 'value', size=1, source=source_usage, selection_color="firebrick",
+              nonselection_fill_color="firebrick", y_range_name='water_usage')
+    line_hover = HoverTool(renderers=[line_plot],
+                             tooltips=OrderedDict([
+                                 ("Usage", "@value{int}"),
+                                 ("Date", "@Date{%F %T}")
+                             ]),
+                          formatters={"Date": "datetime"})
+    plot_events_usage.add_tools(line_hover)
+
+
+    plot_events_usage.legend.location = "top_left"
+    plot_events_usage.legend.click_policy="hide"
+    return plot_events_usage
+
+
+plot_events_usage_tab1 = return_exploration_plot(df, average_usage_df, source_usage, source_events)
+plot_events_usage_tab2 = return_exploration_plot(df, average_usage_df, source_usage, source_events)
 
 return_df_for_bar_chart()
 
 source_usage.on_change('selected', selectedCallback)
 
-line_hover = HoverTool(renderers=[line_plot],
-                         tooltips=OrderedDict([
-                             ("Usage", "@value{int}"),
-                             ("Date", "@Date{%F %T}")
-                         ]),
-                      formatters={"Date": "datetime"})
-plot_events_usage.add_tools(line_hover)
-
-
-plot_events_usage.legend.location = "top_left"
-plot_events_usage.legend.click_policy="hide"
+# line_hover = HoverTool(renderers=[line_plot],
+#                          tooltips=OrderedDict([
+#                              ("Usage", "@value{int}"),
+#                              ("Date", "@Date{%F %T}")
+#                          ]),
+#                       formatters={"Date": "datetime"})
+# plot_events_usage.add_tools(line_hover)
+#
+#
+# plot_events_usage.legend.location = "top_left"
+# plot_events_usage.legend.click_policy="hide"
 # palette = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
 
+# bar chart events
 event_dic = {'Afwijkende geur en/of smaak':'#a6cee3', 'Afwijkende kleur': '#1f78b4', 'Afwijkende temperatuur': '#b2df8a',
              'Afwijkende waterdruk':'#33a02c', 'Geen water':'#fb9a99', 'Geluid in de (drink)waterinstallatie':'#e31a1c',
              'Lekkage binnenshuis':'#fdbf6f', 'Lekkage buitenshuis':'#ff7f00', 'Meteropstelling (geen lekkage)':'#cab2d6',
@@ -716,7 +770,7 @@ plot_bar_chart_events.hbar(y='Reason', right='Count', height=0.9, source=bar_cha
    line_color='white', fill_color=factor_cmap('Reason', palette=palette, factors=bar_chart_source.data['Reason']))
 
 plot_bar_chart_events.xaxis.major_label_orientation = 0.0
-plot_events_usage.min_border_top = 0
+# plot_events_usage.min_border_top = 0
 ########################################################################
 # Plot Heat map
 #######################################################################
@@ -843,7 +897,7 @@ p_outliers.add_tools(p_mean_hover)
 # Manage layout
 ########################################################################
 
-plot_events_usage.min_border_left = 0
+# plot_events_usage.min_border_left = 0
 plot_bar_chart_events.min_border_right = 50
 plot.min_border_right = 50
 
@@ -853,10 +907,11 @@ image_layout = gridplot([[div1]], plot_width=500, plot_height=400, toolbar_optio
 tools_layout = column([group, button, text_input])
 map_plot = gridplot([[plot]], plot_width=500, plot_height=600)
 # row2 = row([tools_layout, map_plot, data_table])
-row1 = row([plot_events_usage, data_table_tab1])
+row1 = row([plot_events_usage_tab1, data_table_tab1])
 row2 = row([plot_bar_chart_events, map_plot, tools_layout])
 col = column([row1, row2])
-heat_map_ = gridplot([[p_heat_map],[p_outliers]], plot_width=1000, plot_height=300, toolbar_location = 'left')
+# heat_map_ = gridplot([p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
+heat_map_ = gridplot([plot_events_usage_tab2, p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
 col = gridplot([[col]], toolbar_location = 'left')
 heat_map_layout = row([heat_map_, data_table_tab2])
 # row_final = row([row2, heat_map_layout])
