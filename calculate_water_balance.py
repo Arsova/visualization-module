@@ -128,7 +128,9 @@ def get_water_balance_plot(plot=0):
         p.xaxis.axis_label = "Time"
         p.yaxis.axis_label = "Million liters of water used"
         p.vbar_stack(stacks, x='TimeStamp', line_width='width', width=2, source=source, color=colors, legend=[value(x) for x in names])
+        # p.legend.location = "top_left"
         p.legend.location = "bottom_right"
+        p.legend.orientation = "horizontal"
         p.legend.click_policy = "hide"
         return p
 

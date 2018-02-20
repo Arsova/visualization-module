@@ -151,13 +151,13 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
     #For the summary
     if location is not None and summary is True:
         summary_df = pd.DataFrame()
-        summary_df['average_consuption_day_liters']= [data['delta_total'].mean()]
+        summary_df['average_consuption_day_liters']= [round(data['delta_total'].mean(),1)]
         summary_df['number_outliers']  = [data['outlier'].sum()]
         summary_df['number_days'] = [data['number_days'].sum()]
         summary_df['average_outliers'] = [summary_df['number_outliers'][0]/summary_df['number_days'][0]]
         summary_df['Location'] = [location]
-        summary_df['min_consuption_day_liters'] = [data['delta_total'].min()]
-        summary_df['max_consuption_day_liters'] = [data['delta_total'].max()]
+        summary_df['min_consuption_day_liters'] = [round(data['delta_total'].min(),1)]
+        summary_df['max_consuption_day_liters'] = [round(data['delta_total'].max(),1)]
         summary_df = pd.merge(left = summary_df, right = df_elog_coor, on=['Location'])
         return summary_df
 

@@ -228,6 +228,9 @@ def change_summary():
     'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
     'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
     'Max consumption (in litres): ' + str(source_summary_dis_temp.data['max_consuption_day_liters'][0]) + '\n'
+
+    text_box_location.text = 'Location number: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+    'Location name: ' + str(source_summary_dis_temp.data['Place'][0])
 def data_table_handler(attr,old,new):
      #Get data
      ind = new['1d']['indices'][0]
@@ -557,7 +560,7 @@ plot.api_key = get_api_key()
 ########################################################################
 
 # triangle glyphs on the map
-triangle_event = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="occurrences")
+triangle_event = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="events")
 glyph_triangle = plot.add_glyph(source, triangle_event)
 
 # circle glyphs on the map
@@ -621,7 +624,7 @@ glyph_circle.data_source.on_change('selected', tap_tool_handler)
 # Add legend
 legend = Legend(items=[
     LegendItem(label="elog_locations"   , renderers=[glyph_circle]),
-    LegendItem(label="occurrences" , renderers=[glyph_triangle])
+    LegendItem(label="events" , renderers=[glyph_triangle])
     # LegendItem(label="Inflow" , renderers=[glyph_square_in]),
     # LegendItem(label="Outflow" , renderers=[glyph_square_out])
 ], orientation="vertical", click_policy="hide")
@@ -638,7 +641,7 @@ def return_exploration_plot(df, average_usage_df, source_usage, source_events, l
     ######################################Bar chart with line chart#########################################################
     #layout settings of chart 1
     plot_events_usage = figure(x_axis_type="datetime",
-                title="Average usage based on e_log meters and number of events in Eindhoven",
+                title="Elog water consumption and events in Eindhoven",
                 toolbar_location="left",
                 plot_width=length, plot_height=height,
                 y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
@@ -748,13 +751,16 @@ source_boundary = ColumnDataSource(data=df_heat1)
 #text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
 initial_text = 'Location number: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
 'Location name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
-'Average consumption (in liters): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
+'Average consumption (in litres): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
 'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
 'Number of days registered: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
 'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
-'Min consumption (in liters): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
-'Max consumption (in liters): ' + str(source_summary_dis_temp.data['max_consuption_day_liters'][0]) + '\n'
+'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
+'Max consumption (in litres): ' + str(source_summary_dis_temp.data['max_consuption_day_liters'][0]) + '\n'
 text_box_summary = PreText(text=initial_text, width=700, height=500)
+location_text = 'Location number: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+'Location name: ' + str(source_summary_dis_temp.data['Place'][0])
+text_box_location = PreText(text=location_text, width=500, height=75)
 ########################################################################
 # Define Create graphs
 ########################################################################
@@ -764,7 +770,7 @@ colors_heat_map = ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690
 mapper_heat_map = LogColorMapper(palette=colors_heat_map, low= 0, high=1000000)
 
 TOOLS_heat_map = "save,pan ,reset, xwheel_zoom"
-p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)),
+p_heat_map = figure(title="Water consumption in Log(Litres)",x_axis_type="datetime", x_range = dates_list, y_range = list(reversed(hour_list)),
                     tools=TOOLS_heat_map)
 
 heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map_temp, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
@@ -779,7 +785,7 @@ color_bar.formatter = NumeralTickFormatter(format='0.0')
 p_heat_map.add_layout(color_bar, 'right')
 
 heat_map_hover = HoverTool(renderers=[heat_map],
-                    tooltips=OrderedDict([('Water Consumption (Liters)', '@rate'),
+                    tooltips=OrderedDict([('Water Consumption (Litres)', '@rate'),
                                         ('date hour', '@date'),
                                          ('hour', '@hour'),
                                        ]))
@@ -805,8 +811,8 @@ p_heat_map.add_tools(heat_map_hover)
 p_heat_map.add_tools(events_hover)
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-p_outliers = figure(title="Daily water consumptions in million of Liters", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
-p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in ML",
+p_outliers = figure(title="Daily water consumptions in Litres", x_axis_type="datetime", tools=TOOLS_heat_map, x_range = dates_list)
+p_circle = p_outliers.circle(x = 'date', y = 'delta_total', size='s', color= 'c', alpha='a', legend= "Consumption in L",
                              source = source_data_aggregated_day_temp)
 
 p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_dash = 'dashed', line_width = 4, color = '#984ea3',
@@ -825,7 +831,7 @@ p_outliers.legend.click_policy= "hide"
 p_outliers.ygrid.band_fill_color = "olive"
 p_outliers.ygrid.band_fill_alpha = 0.1
 p_outliers.xaxis.axis_label = None
-p_outliers.yaxis.axis_label = 'Liters'
+p_outliers.yaxis.axis_label = 'Litres'
 p_outliers.xaxis.major_label_orientation = 3.1416 / 3
 p_outliers.x_range = p_heat_map.x_range# Same axes as the heatMap
 # p_outliers.x_range = plot_events_usage_tab2.x_range
@@ -834,17 +840,17 @@ p_outliers.xaxis.formatter = FuncTickFormatter(code=""" var labels = %s; return 
 
 circle_hover = HoverTool(renderers=[p_circle],
                     tooltips=OrderedDict([('date', '@date'),
-                                          ('Water Consumption (ML)', '@delta_total'),
+                                          ('Water Consumption (L)', '@delta_total'),
                                          ]))
 
 p_ub_hover = HoverTool(renderers=[p_ub],
                     tooltips=OrderedDict([('date', '@date'),
-                                          ('UpperBound water consumption (ML)', '@ub'),
+                                          ('UpperBound water consumption (L)', '@ub'),
                                          ]))
 
 p_mean_hover = HoverTool(renderers=[p_mean],
                     tooltips=OrderedDict([('date', '@date'),
-                                          ('Mean water consumption (ML)', '@y_mean'),
+                                          ('Mean water consumption (L)', '@y_mean'),
                                          ]))
 
 p_outliers.add_tools(circle_hover)
@@ -876,14 +882,16 @@ div_text2 = Div(text="<b>DESIGNED BY</b>",)
 image_layout = gridplot([[div_dummy_1, div_text1, div_text2], [div_dummy_2, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
 toolbar_layout = column([div_header_event_type, group])
 tools_layout = column([toolbar_layout, div_header_radius, text_input, button])
+
 map_plot = gridplot([[plot]], plot_width=500, plot_height=500, toolbar_options={'logo': None})
+map_plot_layout = column([map_plot, text_box_location])
 # row2 = row([tools_layout, map_plot, data_table])
 table1_layout = column([div_header_table1, data_table_tab1])
 plot_events_usage_tab1.toolbar.active_drag = None
 plot_events_usage_tab1.toolbar_location="left"
 plot_events_usage_layout1 = gridplot([[plot_events_usage_tab1]], toolbar_options={'logo': None})
 row1 = row([plot_events_usage_layout1, table1_layout])
-row2 = row([plot_bar_chart_events, map_plot, tools_layout])
+row2 = row([plot_bar_chart_events, map_plot_layout, tools_layout])
 col = column([row1, row2, image_layout])
 # heat_map_ = gridplot([p_heat_map, p_outliers], ncols=1, plot_width=1000, plot_height=300, toolbar_location = 'left')
 tab2_row1 = row([plot_events_usage_tab2])
