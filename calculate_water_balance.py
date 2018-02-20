@@ -11,6 +11,7 @@ from scipy.signal import savgol_filter
 from bokeh.io import curdoc
 from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, DataRange1d, Select, Dropdown, CheckboxGroup, CustomJS, HoverTool, Legend, Paragraph, PreText, Div
+from bokeh.models.glyphs import VBar
 from bokeh.plotting import figure
 from collections import OrderedDict
 from bokeh.command.bootstrap import main
@@ -67,12 +68,14 @@ def get_water_balance_plot(plot=0):
             total_bar['width']=16
         else:
             total_bar['width']=60
+
+        total_bar['Loss'] = -1*total_bar['Loss']
         return ColumnDataSource(data=total), ColumnDataSource(data=total_bar)
 
     # create a new plot with a datetime axis type
 
     def make_line_plot(source):
-        p = figure(plot_width=1100, plot_height=450, x_axis_type='datetime', tools='box_zoom, pan, xwheel_zoom, reset', toolbar_location="above")
+        p = figure(plot_width=1283, plot_height=450, x_axis_type='datetime', tools='box_zoom, pan, xwheel_zoom, reset', toolbar_location="above")
         p.title.text = 'The water balance of Eindhoven'
         p.xaxis.axis_label = "Time"
         p.yaxis.axis_label = "Million liters of water used"
@@ -117,6 +120,8 @@ def get_water_balance_plot(plot=0):
         ], location =(0,-30))
         p.add_layout(legend, 'right')
         p.legend.click_policy = "hide"
+        # p.legend.location = "top_left"
+        # p.legend.orientation = "horizontal"
         return p
 
     def make_bar_chart(source):
@@ -127,9 +132,12 @@ def get_water_balance_plot(plot=0):
                    tools='box_zoom, pan, xwheel_zoom, reset')#, x_range=plot1.x_range)
         p.xaxis.axis_label = "Time"
         p.yaxis.axis_label = "Million liters of water used"
-        p.vbar_stack(stacks, x='TimeStamp', line_width='width', width=2, source=source, color=colors, legend=[value(x) for x in names])
-        # p.legend.location = "top_left"
-        p.legend.location = "bottom_right"
+        #source.data['Loss'] = [-1*i for i in source.data['Loss']]
+        p.vbar(top='Households', x='TimeStamp', line_width='width', width=2, source=source, color=colors[0], legend=names[0])
+        p.vbar(top='Loss', x='TimeStamp', line_width='width', width=2, source=source, color=colors[1], legend=names[1])
+        # glyph = VBar(top='Households', bottom='Loss', x='TimeStamp', width='width', fill_color='blue')
+        # p.add_glyph(source, glyph)
+        p.legend.location = "top_left"
         p.legend.orientation = "horizontal"
         p.legend.click_policy = "hide"
         return p
@@ -180,8 +188,11 @@ def get_water_balance_plot(plot=0):
                                      ("Date", "@TimeStamp")
                                  ]))
     plot1.add_tools(hover)
-    text_box = PreText(text='In 2017 there was in total '+str(round(source_bar.data['Loss'].sum(),0))+' million liters of non revenue water. \nThis is '+str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+' million liters. '
-    , width=550)
+    text_box = PreText(text='In 2017 there was in total '+ str(round(source_bar.data['Loss'].sum(),0))+
+    ' million liters of non revenue water. \nThis is '+ str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+
+    '% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+
+    str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+
+    ' million liters. ', width=550)
     div_header_options = Div(text="<b> SELECT OPTIONS </b>", width=200)
     controls = column(level_select, axis_select, pattern_select)
     column1=column([div_header_options, controls])
