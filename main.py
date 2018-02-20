@@ -647,7 +647,7 @@ def return_exploration_plot(df, average_usage_df, source_usage, source_events, l
     ######################################Bar chart with line chart#########################################################
     #layout settings of chart 1
     plot_events_usage = figure(x_axis_type="datetime",
-                title="Elog water consumption and events in Eindhoven",
+                title="Average Elog water consumption and events in Eindhoven",
                 toolbar_location="left",
                 plot_width=length, plot_height=height,
                 y_range=Range1d(start=0, end=max(df["Number of complains"]+5)),
