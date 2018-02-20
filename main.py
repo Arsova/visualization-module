@@ -220,8 +220,8 @@ def get_events(lon, lat, radius, flag = 0):
         source_events_temp.data = ColumnDataSource(data = data_cc_filtered_local).data
 
 def change_summary():
-    text_box_summary.text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
-    'Place Name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
+    text_box_summary.text = 'Location number: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+    'Location name:: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
     'Average consumption (in litres): ' + str(source_summary_dis_temp.data['average_consuption_day_liters'][0]) + '\n' + \
     'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
     'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
@@ -746,8 +746,8 @@ source_events_temp = ColumnDataSource(data = data_cc_filtered)
 source_summary_dis_temp = ColumnDataSource(data=summary_df)
 source_boundary = ColumnDataSource(data=df_heat1)
 #text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
-initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
-'Place Name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
+initial_text = 'Location number: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+'Location name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
 'Average consumption (in liters): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
 'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
 'Number of days registered: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
@@ -769,6 +769,9 @@ p_heat_map = figure(title="Water consumption in Log(Liters)",x_axis_type="dateti
 
 heat_map = p_heat_map.rect(x="date", y="hour", width=1, height=1, source = source_heat_map_temp, fill_color={'field': 'rate', 'transform': mapper_heat_map}, line_color=None)
 p_events = p_heat_map.triangle(x = 'date', y = 'Hour', legend= "Events", source = source_events_temp, color = 'color', size= 12, line_color="black")
+#boundaries
+p_boundary_start = p_heat_map.line(x = 'start_date', y = 'hour', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 4 )
+p_boundary_end = p_heat_map.line(x = 'end_date', y = 'hour', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 4 )
 
 
 color_bar = ColorBar(color_mapper=mapper_heat_map, border_line_color=None,label_standoff=12, location=(0, 0))
@@ -812,8 +815,8 @@ p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling_temp, lin
                          legend='moving_average', color = '#4daf4a')
 
 #Dynamic boundaries
-p_boundary_start = p_outliers.line(x = 'start_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 5 )
-p_boundary_end = p_outliers.line(x = 'end_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 5 )
+p_boundary_start = p_outliers.line(x = 'start_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 4 )
+p_boundary_end = p_outliers.line(x = 'end_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 4 )
 # To create intervals we can follow:
 
 p_outliers.legend.location = "top_left"

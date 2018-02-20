@@ -117,6 +117,7 @@ def create_dym_selection(max_val, start_date = date(2017,1,1), end_date = date(2
     df_dynamic = pd.DataFrame()
     df_dynamic['start_date'] = [start_date, start_date]
     df_dynamic['end_date'] = [end_date, end_date]
+    df_dynamic['hour'] = ['23','0']
     df_dynamic['y'] = [max_val + max_val*0.2, 0]
     df_dynamic['start_date'] = df_dynamic['start_date'].apply(lambda x: x.strftime('%Y-%m-%d'))
     df_dynamic['end_date'] = df_dynamic['end_date'].apply(lambda x: x.strftime('%Y-%m-%d'))
