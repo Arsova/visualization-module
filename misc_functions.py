@@ -59,7 +59,8 @@ def classify_out(val_list):
     mean = np.mean(val_list)
     std = np.std(val_list)
     out = ['#8c510a' if i>(2*std) else '#2166ac' for i in val_list]
-    return out
+    classes = ['HIGH' if i>(2*std) else 'LOW' for i in val_list]
+    return out, classes
 
 
 # returns new aggregaate consumption values
@@ -78,8 +79,8 @@ def return_value_list(locations, start='2017-1-1', end='2017-12-31'):
             consumption = df_temp['delta_total'].sum()
             value_list.append(consumption)
 
-    outliers = classify_out(value_list)
-    return value_list, outliers
+    outliers, classes = classify_out(value_list)
+    return value_list, outliers, classes
 
 
 def return_filtered_locations(df_eLoc_coor, flag=1):

@@ -57,7 +57,7 @@ lon_elog=list(df_elog_coor['Lon'])
 place_elog=list(df_elog_coor['Place'])
 location_elog=list(df_elog_coor['Location'])
 zipcode_elog=list(df_elog_coor['Zipcode'])
-value_elog, outliers_color = return_value_list(locations=location_elog)
+value_elog, outliers_color, classes = return_value_list(locations=location_elog)
 
 booster_lat_out = list(df_booster_out['Lat'])
 booster_lon_out = list(df_booster_out['Lon'])
@@ -416,7 +416,8 @@ source_elog_original = bk.ColumnDataSource(
         location_elog=location_elog,
         zipcode_elog=zipcode_elog,
         value_elog = value_elog,
-        color = outliers_color
+        color = outliers_color,
+        classes = classes
     )
 )
 
@@ -429,7 +430,8 @@ source_elog = bk.ColumnDataSource(
         location_elog=location_elog,
         zipcode_elog=zipcode_elog,
         value_elog = value_elog,
-        color = outliers_color
+        color = outliers_color,
+        classes = classes
     )
 )
 
@@ -600,7 +602,8 @@ plot.add_tools(triangle_hover)
 circle_hover = HoverTool(renderers=[glyph_circle],
                          tooltips=OrderedDict([
                              ("Place", "@place_elog"),
-                             ("Usage", '@value_elog')
+                             ("Usage", '@value_elog'),
+                             ("Classification", '@classes')
                          ]))
 plot.add_tools(circle_hover)
 
