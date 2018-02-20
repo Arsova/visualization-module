@@ -336,6 +336,7 @@ def selectedCallback(attr, old, new):
     val0 = convert_to_date_reverse(date0)
     val1 = convert_to_date_reverse(date1)
 
+
     possible_events = [occur_type[i] for i in checkbox_group.active]
 
     source.data={key:[value for i, value in enumerate(source_original.data[key])
@@ -350,10 +351,12 @@ def selectedCallback(attr, old, new):
         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
+
     # new consumption values for the elog locations
-    source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
+    source_elog.data['value_elog'], source_elog.data['color'], source_elog.data['classes'] = return_value_list(location_elog, str(val0), str(val1))
 
     return_df_for_bar_chart(date0, date1)
+
 
 def checkbox_filter_callback(attr, old, new):
     val0 = sorce_slider.data['start_date'][0]
