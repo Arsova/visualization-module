@@ -569,12 +569,12 @@ plot.api_key = get_api_key()
 
 # triangle glyphs on the map
 triangle_event = Triangle(x="lon", y="lat", size=12, fill_color="red", fill_alpha=0.5, line_color=None, name="events")
-glyph_triangle = plot.add_glyph(source, triangle_event)
+glyph_triangle = plot.add_glyph(source, triangle_event, nonselection_glyph=triangle_event)
 
 # circle glyphs on the map
 circle_elog = Circle(x="lon_elog", y="lat_elog", size=12, fill_color="color",
 fill_alpha=0.8, line_color=None, name="elog_locations")
-glyph_circle = plot.add_glyph(source_elog, circle_elog)
+glyph_circle = plot.add_glyph(source_elog, circle_elog, nonselection_glyph=circle_elog, )
 
 circle_radius = Circle(x="lon_radius", y="lat_radius", radius= "rad_radius", fill_alpha=0.3, line_color='black')
 glyph_circle_radius = plot.add_glyph(source_radius_circle, circle_radius)
@@ -874,21 +874,25 @@ p_outliers.add_tools(p_mean_hover)
 plot_bar_chart_events.min_border_right = 50
 plot.min_border_right = 50
 
-div_dummy_1 = Div(text="", width=710)
-div_dummy_2 = Div(text="", width=650)
+div_dummy_1 = Div(text="", width=450)
+div_dummy_2 = Div(text="", width=390)
 div_header_table1 = Div(text="<b> SELECT LOCATION </b>", width=200)
 div_header_table2 = Div(text="<b> SELECT LOCATION </b>", width=200)
 div_header_event_type = Div(text="<b> SELECT EVENT TYPE </b>", width=200)
 div_header_radius = Div(text="<b> CHANGE RADIUS </b>", width=200)
 div_header_summary = Div(text="<b> SUMMARY </b>", width=200)
-div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='250' style='float:center';>")
-div2 = Div(text="<img src='visualization-module/static/bokeh.jpg' margin-left:'45px' height='60' width='180' style='float:center';>")
-div3 = Div(text="<img src='visualization-module/static/jads.png' margin-left:'45px' height='80' width='210' style='float:center';>")
-div_text1 = Div(text="<b>POWERED BY</b>",)
+div1 = Div(text="<img src='visualization-module/static/brabant-water.jpg' margin-left:'45px' height='60' width='210' style='float:center';>")
+div2 = Div(text="<img src='visualization-module/static/jads.png' margin-left:'45px' height='80' width='210' style='float:center';>")
+div3 = Div(text="<img src='visualization-module/static/bokeh.jpg' margin-left:'45px' height='60' width='180' style='float:center';>")
+
+
+div_text1 = Div(text="<b>DESIGNED FOR</b>",)
 div_text2 = Div(text="<b>DESIGNED BY</b>",)
+div_text3 = Div(text="<b>POWERED BY</b>",)
+
 
 # div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
-image_layout = gridplot([[div_dummy_1, div_text1, div_text2], [div_dummy_2, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+image_layout = gridplot([[div_dummy_1, div_text1, div_text2, div_text3], [div_dummy_2, div1, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
 toolbar_layout = column([div_header_event_type, group])
 tools_layout = column([toolbar_layout, div_header_radius, text_input, button])
 
