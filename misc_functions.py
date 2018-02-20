@@ -121,7 +121,7 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
         data = data[data['location'] == location]
 
     data['date'] = pd.to_datetime(data['norm_date']).apply(lambda x: x.strftime('%Y-%m-%d'))
-    data['delta_total'] = data['delta_total']/1000000
+    data['delta_total'] = data['delta_total']
     sem = lambda x: x.std() / np.sqrt(x.size)
     rolling = data['delta_total'].rolling(window = window_size).agg({"y_mean": np.mean, "y_std": np.std, "y_sem": sem})
     rolling = rolling.fillna(method='bfill')
@@ -148,8 +148,8 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
         summary_df['number_days'] = [data['number_days'].sum()]
         summary_df['average_outliers'] = [summary_df['number_outliers'][0]/summary_df['number_days'][0]]
         summary_df['Location'] = [location]
-        summary_df['min_consuption_day_liters'] = [data['delta_total'].min() * 1000000]
-        summary_df['max_consuption_day_liters'] = [data['delta_total'].max() * 1000000]
+        summary_df['min_consuption_day_liters'] = [data['delta_total'].min()]
+        summary_df['max_consuption_day_liters'] = [data['delta_total'].max()]
         print('check summary in misc')
         print(summary_df)
         return summary_df
@@ -157,14 +157,14 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
     #create the table to show the summary per every user
     if location is None:
         frames = pd.DataFrame()
-        frames['average_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].mean() * 1000000
+        frames['average_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].mean()
         frames['number_outliers'] = data.groupby(by = ['location'])['outlier'].sum()
 
         frames['number_days'] = data[['location', 'number_days']].groupby(by = ['location']).agg('count')
         frames['average_outliers'] = frames['number_outliers']/frames['number_days']
         frames['Location'] = frames.index
-        frames['min_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].min() * 1000000
-        frames['max_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].max() * 1000000
+        frames['min_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].min()
+        frames['max_consuption_day_liters'] = data.groupby(by = ['location'])['delta_total'].max()
         frames.reset_index(drop=True)
 
         frames = pd.merge(left = frames, right = df_elog_coor, on=['Location'])

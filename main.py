@@ -156,33 +156,6 @@ def filter_usage(attr,old,new):
     # new consumption values for the elog locations
     source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
 
-# Function to filter occurrences based on slider and checkbox selection
-# def filter_occurrences(attr,old,new):
-#
-#     #val1 and val2 are new slider values in timestamps
-#     # val0 = str(slider.value[0])
-#     val0 = str(source_fake_events.data['value'][0][0])
-#     val0 = val0[:-3]
-#     val0 = date.fromtimestamp(int(val0))
-#     val1 = str(source_fake_events.data['value'][0][1])
-#     val1 = val1[:-3]
-#     val1 = date.fromtimestamp(int(val1))
-#     # checkbox_group.active gives a list of indices corresponding to options selected using checkbox
-#     possible_events = [occur_type[i] for i in checkbox_group.active]
-#
-#     # create new events source to display on map, controlled by slider
-#     source.data={key:[value for i, value in enumerate(source_original.data[key])
-#     if convert_to_date(source_original.data["dates"][i])>=val0 and convert_to_date(source_original.data["dates"][i])<=val1
-#     and source_original.data["issue"][i] in possible_events]
-#     for key in source_original.data}
-#
-#     #this function creates dynamicly changes the heat map
-#     sorce_slider.data['start_date'] = [val0]
-#     sorce_slider.data['end_date'] = [val1]
-#     if sorce_slider.data['start_date'] != []:
-#         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
-
-
 
 def filter_sources_HM(start_date, end_date):
 
@@ -271,8 +244,6 @@ def data_table_handler(attr,old,new):
      plot_radius(lat, lon, rad)
      get_new_heat_map_source(loc[0], 0)
      get_events(lon, lat, rad, 0)
-
-
 
      if sorce_slider.data['start_date'] != []:
          filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
@@ -517,15 +488,6 @@ slider.callback = CustomJS(args=dict(source=source_fake), code="""
 
 # change fake data source, which in turn triggers filter function to modify the real data
 source_fake.on_change('data', filter_usage)
-
-# slider and callbacks for events
-# slider_events = DateRangeSlider(start=date(2017, 1, 1), end=date(2017, 12, 31), value=(date(2017, 1, 1), date(2017, 12, 31)),
-# step=1, title="Occurrence period", callback_policy="mouseup")
-# slider_events.callback = CustomJS(args=dict(source=source_fake_events), code="""
-#     source.data = { value: [cb_obj.value] }
-# """)
-#
-# source_fake_events.on_change("data", filter_occurrences)
 
 # checkbox for event type
 checkbox_group = CheckboxGroup(
@@ -793,12 +755,12 @@ print('Summary dataframe:')
 print(source_summary_dis_temp.data)
 #text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
 initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
-'Average consumption (in litres): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
+'Average consumption (in liters): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
 'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
-'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
+'Number of days registered: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
 'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
-'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
-'Max consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n'
+'Min consumption (in liters): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
+'Max consumption (in liters): ' + str(source_summary_dis_temp.data['max_consuption_day_liters'][0]) + '\n'
 text_box_summary = PreText(text=initial_text, width=700, height=500)
 ########################################################################
 # Define Create graphs
@@ -865,7 +827,7 @@ p_outliers.legend.click_policy= "hide"
 p_outliers.ygrid.band_fill_color = "olive"
 p_outliers.ygrid.band_fill_alpha = 0.1
 p_outliers.xaxis.axis_label = None
-p_outliers.yaxis.axis_label = 'Million of Liters'
+p_outliers.yaxis.axis_label = 'Liters'
 p_outliers.xaxis.major_label_orientation = 3.1416 / 3
 p_outliers.x_range = p_heat_map.x_range# Same axes as the heatMap
 # p_outliers.x_range = plot_events_usage_tab2.x_range
