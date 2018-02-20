@@ -29,13 +29,14 @@ from calculate_water_balance import *
 # read data files and process
 ########################################################################
 df_elog_coor = pd.read_csv('visualization-module/data/coordinates-codes-updated.csv', delimiter=';')
-df_elog_coor = return_filtered_locations(df_elog_coor)
+df_elog_coor = return_filtered_locations(df_elog_coor, 1)
 # limited_occ_with_gps_new.csv (replace / with -)
 data_cc = pd.read_csv('visualization-module/data/limited_occ_with_gps_time.csv', delimiter=';')
 #booster location data
 df_booster_out = pd.read_csv('visualization-module/data/Installaties_Eindhoven_out.txt', delimiter=';')
 df_booster_in = pd.read_csv('visualization-module/data/Installaties_Eindhoven_in.txt', delimiter=';')
 df_data_aggregated = pd.read_csv('visualization-module/data/aggregated_day_total_2_positives.csv')
+df_data_aggregated = return_filtered_locations(df_data_aggregated, 2)
 df_table = pre_process_total(df_data_aggregated, df_elog_coor = df_elog_coor)
 
 # get selected attribtes for occurrences
@@ -177,9 +178,9 @@ def filter_sources_HM(start_date, end_date):
                          convert_to_date_reverse(CDS.data["date"][i]) <= end_date] for key in CDS.data
                     }
 
-    source_heat_map_temp.data = get_data_dates(source_heat_map, start_date, end_date)
-    source_data_aggregated_day_temp.data = get_data_dates(source_data_aggregated_day, start_date, end_date)
-    source_rolling_temp.data = get_data_dates(source_rolling, start_date, end_date)
+    #source_heat_map_temp.data = get_data_dates(source_heat_map, start_date, end_date)
+    #source_data_aggregated_day_temp.data = get_data_dates(source_data_aggregated_day, start_date, end_date)
+    #source_rolling_temp.data = get_data_dates(source_rolling, start_date, end_date)
     source_events_temp.data = get_data_dates(CDS=source_events, start_date=start_date, end_date=end_date, get_events_heatmap = True)
 
 
@@ -249,7 +250,7 @@ def data_table_handler(attr,old,new):
      get_events(lon, lat, rad, 0)
 
      if sorce_slider.data['start_date'] != []:
-         #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
@@ -268,7 +269,7 @@ def tap_tool_handler(attr,old,new):
     get_new_heat_map_source(location_elog[ind], 0)
     get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
     if sorce_slider.data['start_date'] != []:
-        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
@@ -287,7 +288,7 @@ def change_radius(attr,old,new):
     source_radius_circle.data['rad_radius'] = r
     get_events(source_radius_circle.data['lon_radius'], source_radius_circle.data['lat_radius'], float(text_input.value), 0)
     if sorce_slider.data['start_date'] != []:
-        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
@@ -344,7 +345,7 @@ def selectedCallback(attr, old, new):
     sorce_slider.data['end_date'] = [val1]
 
     if sorce_slider.data['start_date'] != []:
-        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
     # new consumption values for the elog locations
@@ -364,7 +365,7 @@ def checkbox_filter_callback(attr, old, new):
     for key in source_original.data}
 
     if sorce_slider.data['start_date'] != []:
-        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
         max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
         source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
