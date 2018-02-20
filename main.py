@@ -204,7 +204,7 @@ def get_new_heat_map_source(location, flag=0):
     data = pre_process_hour_consuption(location)
     df_heat = pd.DataFrame(data.stack(), columns=['rate']).reset_index()
     data_aggregated_day_local, rolling_local = pre_process_total(df_data_aggregated, location, 30)
-    summary_dis = pre_process_total(df_data_aggregated, location, summary = True)
+    summary_dis = pre_process_total(df_data_aggregated, location, df_elog_coor = df_elog_coor,summary = True)
 
     if flag == 1:
         return df_heat
@@ -222,6 +222,7 @@ def get_events(lon, lat, radius, flag = 0):
 
 def change_summary():
     text_box_summary.text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+    'Place Name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
     'Average consumption (in litres): ' + str(source_summary_dis_temp.data['average_consuption_day_liters'][0]) + '\n' + \
     'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
     'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
@@ -726,7 +727,7 @@ plot_bar_chart_events.xaxis.major_label_orientation = 0.0
 ########################################################################
 df_heat1 = get_new_heat_map_source(location=1163208, flag=1)
 data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
-summary_df = pre_process_total(data=df_data_aggregated, location=1163208, summary = True)
+summary_df = pre_process_total(data=df_data_aggregated, location=1163208, df_elog_coor = df_elog_coor, summary = True)
 
 
 data_cc = pre_process_cc(data_cc)
@@ -755,6 +756,7 @@ print('Summary dataframe:')
 print(source_summary_dis_temp.data)
 #text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
 initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
+'Place Name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
 'Average consumption (in liters): ' + str(int(source_summary_dis_temp.data['average_consuption_day_liters'][0])) + '\n' + \
 'Number of outliers: ' + str(source_summary_dis_temp.data['number_outliers'][0]) + '\n' + \
 'Number of days registered: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \

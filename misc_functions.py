@@ -150,6 +150,8 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
         summary_df['Location'] = [location]
         summary_df['min_consuption_day_liters'] = [data['delta_total'].min()]
         summary_df['max_consuption_day_liters'] = [data['delta_total'].max()]
+        summary_df = pd.merge(left = summary_df, right = df_elog_coor, on=['Location'])
+        
         print('check summary in misc')
         print(summary_df)
         return summary_df
