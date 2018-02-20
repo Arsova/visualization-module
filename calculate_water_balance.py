@@ -36,6 +36,12 @@ def get_water_balance_plot(plot=0):
         usage['TimeStamp'] = pd.to_datetime(usage['TimeStamp'])
         inflow['TimeStamp'] = pd.to_datetime(inflow['TimeStamp'])
         booster['TimeStamp'] = pd.to_datetime(booster['TimeStamp'])
+        
+        from_date = '2017-02-01'
+        usage = usage[usage['TimeStamp']>=from_date]
+        inflow = inflow[inflow['TimeStamp']>=from_date]
+        booster = booster[booster['TimeStamp']>=from_date]
+        
         total=pd.concat([usage, inflow, booster], axis=1)
         if (pattern==0):
             if (lvl == '4weeks' or lvl == 'week'):
@@ -143,17 +149,17 @@ def get_water_balance_plot(plot=0):
         return p
 
     def update_stats(source):
-        text_box.text='In 2017 there was in total '+str(round(source['Loss'].sum()))+' million liters of non revenue water. \nThis is '+str(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
+        text_box.text='In 2017 there was in total '+str(round(source['Loss'].sum()))+' million liters of non revenue water. \nThis is '+str(abs(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2)))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
 
     def update_plot(attr, old, new):
         src_line, src_bar= get_dataset(level_select.value, axis_select.value, pattern_select.value)
         source_line.data=src_line.data
         source_bar.data = src_bar.data
         update_stats(source_bar.data)
-        hover.tooltips = [
-            ('Consumption', '$y million liters per %s' % (level_select.value)),
-            ('Timestamp', '@TimeStamp'),
-        ]
+        hover = HoverTool(tooltips=OrderedDict([
+                                     ("Consumption", '$y million liters per %s'%(level_select.value)),
+                                     ("Date", "@TimeStamp{%F %T}")
+                                 ]), formatters={"Date": "datetime"})
 
 
 
@@ -185,11 +191,11 @@ def get_water_balance_plot(plot=0):
     #]
     hover = HoverTool(tooltips=OrderedDict([
                                      ("Consumption", '$y million liters per %s'%(level_select.value)),
-                                     ("Date", "@TimeStamp")
-                                 ]))
+                                     ("Date", "@TimeStamp{%F %T}")
+                                 ]), formatters={"Date": "datetime"})
     plot1.add_tools(hover)
     text_box = PreText(text='In 2017 there was in total '+ str(round(source_bar.data['Loss'].sum(),0))+
-    ' million liters of non revenue water. \nThis is '+ str(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2))+
+    ' million liters of non revenue water. \nThis is '+ str(abs(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2)))+
     '% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+
     str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+
     ' million liters. ', width=550)
