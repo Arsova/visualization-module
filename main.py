@@ -29,14 +29,14 @@ from calculate_water_balance import *
 # read data files and process
 ########################################################################
 df_elog_coor = pd.read_csv('visualization-module/data/coordinates-codes-updated.csv', delimiter=';')
-df_elog_coor = return_filtered_locations(df_elog_coor, 1)
+df_elog_coor = return_filtered_locations(df_elog_coor, flag=1)
 # limited_occ_with_gps_new.csv (replace / with -)
 data_cc = pd.read_csv('visualization-module/data/limited_occ_with_gps_time.csv', delimiter=';')
 #booster location data
 df_booster_out = pd.read_csv('visualization-module/data/Installaties_Eindhoven_out.txt', delimiter=';')
 df_booster_in = pd.read_csv('visualization-module/data/Installaties_Eindhoven_in.txt', delimiter=';')
 df_data_aggregated = pd.read_csv('visualization-module/data/aggregated_day_total_2_positives.csv')
-df_data_aggregated = return_filtered_locations(df_data_aggregated, 2)
+df_data_aggregated = return_filtered_locations(df_data_aggregated, list(df_elog_coor['Location'].unique()) , 2)
 df_table = pre_process_total(df_data_aggregated, df_elog_coor = df_elog_coor)
 
 # get selected attribtes for occurrences
@@ -77,7 +77,9 @@ def pre_process_Eindhoven(df):
     df_Numb_com = pd.DataFrame(df[["Date","Number of complains"]].groupby("Date", as_index=False).sum())
     return df, df_Numb_com
 
-e_log = pd.read_csv("visualization-module/data/aggregated_day_total_2_positives.csv")
+#e_log = pd.read_csv("visualization-module/data/aggregated_day_total_2_positives.csv")
+e_log = df_data_aggregated
+
 complaints = pd.read_excel('visualization-module/data/export_occurences.xlsx')
 complaints = complaints.loc[complaints['Storingslocatie plaats']=='EINDHOVEN']
 
