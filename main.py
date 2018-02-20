@@ -124,9 +124,7 @@ def plot_radius(lat=[], lon=[], radius=[]):
         events_selected: vector with the Id of the events selected
     """
     radius = [rad*1000 for rad in radius] #Convert to Km
-    print(lat)
-    print(lon)
-    print(radius)
+
     source_radius_circle.data['lat_radius'] = lat
     source_radius_circle.data['lon_radius'] = lon
     source_radius_circle.data['rad_radius'] = radius
@@ -151,7 +149,9 @@ def filter_usage(attr,old,new):
     sorce_slider.data['start_date'] = [val0]
     sorce_slider.data['end_date'] = [val1]
     if sorce_slider.data['start_date'] != []:
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
     # new consumption values for the elog locations
     source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
@@ -162,7 +162,6 @@ def filter_sources_HM(start_date, end_date):
     def get_data_dates(CDS, start_date, end_date, get_events_heatmap = False):
         if get_events_heatmap:
             possible_events = [occur_type[i] for i in checkbox_group.active]
-            print(possible_events)
             return {
                     key:[value for i, value in enumerate(CDS.data[key])
                          if convert_to_date_reverse(CDS.data["date"][i]) >= start_date and
@@ -228,7 +227,7 @@ def change_summary():
     'Number of days: ' + str(source_summary_dis_temp.data['number_days'][0]) + '\n' + \
     'Average outliers: ' + str(source_summary_dis_temp.data['average_outliers'][0]) + '\n' + \
     'Min consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n' + \
-    'Max consumption (in litres): ' + str(source_summary_dis_temp.data['min_consuption_day_liters'][0]) + '\n'
+    'Max consumption (in litres): ' + str(source_summary_dis_temp.data['max_consuption_day_liters'][0]) + '\n'
 def data_table_handler(attr,old,new):
      #Get data
      ind = new['1d']['indices'][0]
@@ -247,7 +246,9 @@ def data_table_handler(attr,old,new):
      get_events(lon, lat, rad, 0)
 
      if sorce_slider.data['start_date'] != []:
-         filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+         #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
      change_summary()
 
@@ -264,10 +265,12 @@ def tap_tool_handler(attr,old,new):
     get_new_heat_map_source(location_elog[ind], 0)
     get_events(lon_elog[ind], lat_elog[ind], float(text_input.value), 0)
     if sorce_slider.data['start_date'] != []:
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
     change_summary()
-    
+
 def reset_radius():
     l1 = []
     l2 = []
@@ -281,7 +284,9 @@ def change_radius(attr,old,new):
     source_radius_circle.data['rad_radius'] = r
     get_events(source_radius_circle.data['lon_radius'], source_radius_circle.data['lat_radius'], float(text_input.value), 0)
     if sorce_slider.data['start_date'] != []:
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
 def return_df_for_bar_chart(start='2017-01-01', end = '2017-12-31'):
     start = convert_to_date_reverse(start)
@@ -306,13 +311,13 @@ def return_df_for_bar_chart(start='2017-01-01', end = '2017-12-31'):
 
 # plot_events_usage.tool_events.on_change('geometries', cb)
 def selectedCallback(attr, old, new):
-    print(new['1d']['indices'])
+    # print(new['1d']['indices'])
     try:
         index0 = min(new['1d']['indices'])
         index1 = max(new['1d']['indices'])
-        print(index0)
-        print(index1)
-        print(len(new['1d']['indices']))
+        # print(index0)
+        # print(index1)
+        # print(len(new['1d']['indices']))
         date0 = str(date_list[index0]).split(' ')[0]
         date1 = str(date_list[index1]).split(' ')[0]
 
@@ -320,8 +325,8 @@ def selectedCallback(attr, old, new):
         date0 = '2017-01-01'
         date1 = '2017-12-31'
 
-    print(date0)
-    print(date1)
+    # print(date0)
+    # print(date1)
     val0 = convert_to_date_reverse(date0)
     val1 = convert_to_date_reverse(date1)
 
@@ -336,8 +341,9 @@ def selectedCallback(attr, old, new):
     sorce_slider.data['end_date'] = [val1]
 
     if sorce_slider.data['start_date'] != []:
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
-
+        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
     # new consumption values for the elog locations
     source_elog.data['value_elog'], source_elog.data['color'] = return_value_list(location_elog, str(val0), str(val1))
 
@@ -355,8 +361,9 @@ def checkbox_filter_callback(attr, old, new):
     for key in source_original.data}
 
     if sorce_slider.data['start_date'] != []:
-        filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
-
+        #filter_sources_HM(start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])
+        max_val = max([max(source_rolling_temp.data['ub']),source_summary_dis_temp.data['max_consuption_day_liters'][0]])
+        source_boundaries.data = ColumnDataSource(data = create_dym_selection(max_val, start_date = sorce_slider.data['start_date'][0], end_date = sorce_slider.data['end_date'][0])).data
 
 ########################################################################
 # Define data sources
@@ -524,9 +531,6 @@ text_input.on_change('value', change_radius)
 columns_table = [
         TableColumn(field="Location", title="Location", width=80),
         TableColumn(field="Place", title="Place", width=230),
-        #TableColumn(field="number_days", title="Number of days recorded"),
-        #TableColumn(field="number_outliers", title="Number of outliers"),
-        #TableColumn(field="average_outliers", title="Outliers per day"),
     ]
 
 data_table_tab1 = DataTable(source = source_table, columns = columns_table, width=310, height=280)
@@ -659,8 +663,6 @@ def return_exploration_plot(df, average_usage_df, source_usage, source_events, l
             legend='Water usage', line_width =3, y_range_name='water_usage')
     # line_plot = plot_events_usage.add_glyph(source_usage, line_glyph)
 
-
-
     plot_events_usage.vbar(x="Date", top="value", source=source_events,
             width=1, color="green", line_width =2, legend='Number of events')
 
@@ -687,19 +689,6 @@ return_df_for_bar_chart()
 
 source_usage.on_change('selected', selectedCallback)
 
-# line_hover = HoverTool(renderers=[line_plot],
-#                          tooltips=OrderedDict([
-#                              ("Usage", "@value{int}"),
-#                              ("Date", "@Date{%F %T}")
-#                          ]),
-#                       formatters={"Date": "datetime"})
-# plot_events_usage.add_tools(line_hover)
-#
-#
-# plot_events_usage.legend.location = "top_left"
-# plot_events_usage.legend.click_policy="hide"
-# palette = ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a']
-
 # bar chart events
 event_dic = {'Afwijkende geur en/of smaak':'#a6cee3', 'Afwijkende kleur': '#1f78b4', 'Afwijkende temperatuur': '#b2df8a',
              'Afwijkende waterdruk':'#33a02c', 'Geen water':'#fb9a99', 'Geluid in de (drink)waterinstallatie':'#e31a1c',
@@ -725,17 +714,19 @@ plot_bar_chart_events.xaxis.major_label_orientation = 0.0
 ########################################################################
 # Define initial parameters
 ########################################################################
+start = datetime.strptime("2017-01-01", "%Y-%m-%d")
+end = datetime.strptime("2017-12-31", "%Y-%m-%d")
+
 df_heat1 = get_new_heat_map_source(location=1163208, flag=1)
 data_aggregated_day, rolling = pre_process_total(df_data_aggregated,1163208, 30)
 summary_df = pre_process_total(data=df_data_aggregated, location=1163208, df_elog_coor = df_elog_coor, summary = True)
-
+boundaries = create_dym_selection(summary_df['max_consuption_day_liters'][0])
 
 data_cc = pre_process_cc(data_cc)
 data_cc_filtered = get_events(5.47255, 51.4412585, 2, flag = 1)
 plot_radius([51.4412585], [5.47255], [2])
 
-start = datetime.strptime("2017-01-01", "%Y-%m-%d")
-end = datetime.strptime("2017-12-31", "%Y-%m-%d")
+
 dates_list = list(pd.date_range(start = start, end = end).strftime('%Y-%m-%d'))
 dates_list = [str(j) for j in dates_list]
 hour_list = [str(x) for x in list(range(24))]
@@ -746,14 +737,14 @@ source_data_aggregated_day = ColumnDataSource(data=data_aggregated_day)
 source_rolling = ColumnDataSource(data = rolling)
 source_events = ColumnDataSource(data = data_cc_filtered)
 source_summary_dis = ColumnDataSource(data=summary_df)
+source_boundaries = ColumnDataSource(data=boundaries)
 
 source_heat_map_temp = ColumnDataSource(data=df_heat1)
 source_data_aggregated_day_temp = ColumnDataSource(data=data_aggregated_day)
 source_rolling_temp = ColumnDataSource(data = rolling)
 source_events_temp = ColumnDataSource(data = data_cc_filtered)
 source_summary_dis_temp = ColumnDataSource(data=summary_df)
-print('Summary dataframe:')
-print(source_summary_dis_temp.data)
+source_boundary = ColumnDataSource(data=df_heat1)
 #text_box_summary = PreText(text='Summary of Location: '+ str(source_summary_dis_temp.data['Location'][0]), width=550)
 initial_text = 'Summary of Location: ' + str(source_summary_dis_temp.data['Location'][0]) + '\n' + \
 'Place Name: ' + str(source_summary_dis_temp.data['Place'][0]) + '\n' + \
@@ -820,7 +811,9 @@ p_ub = p_outliers.line(x='date', y='ub', legend='upper_bound (2 sigma)', line_da
 p_mean = p_outliers.line(x='date', y='y_mean', source = source_rolling_temp, line_dash = 'dashed', line_width = 3,
                          legend='moving_average', color = '#4daf4a')
 
-
+#Dynamic boundaries
+p_boundary_start = p_outliers.line(x = 'start_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 5 )
+p_boundary_end = p_outliers.line(x = 'end_date', y = 'y', source =source_boundaries, line_dash = 'dashed', color = "firebrick", line_width = 5 )
 # To create intervals we can follow:
 
 p_outliers.legend.location = "top_left"

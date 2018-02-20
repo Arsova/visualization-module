@@ -59,7 +59,6 @@ def classify_out(val_list):
     mean = np.mean(val_list)
     std = np.std(val_list)
     out = ['#8c510a' if i>(2*std) else '#2166ac' for i in val_list]
-    print(out)
     return out
 
 
@@ -88,8 +87,6 @@ def return_filtered_locations(df_eLoc_coor):
 1805822,1806880,1814060,1816705,2039867,1862885,1876147,1880014]
 
     df_eLoc_coor = df_eLoc_coor[~df_eLoc_coor['Location'].isin(loc_to_delete)]
-    print('Size of df_elog_coor: ')
-    print(len(df_eLoc_coor))
     return df_eLoc_coor
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -115,6 +112,17 @@ def pre_process_hour_consuption(location):
     data.index.name = 'hour'
     data.index = data.index.astype(str)
     return data
+
+def create_dym_selection(max_val, start_date = date(2017,1,1), end_date = date(2017,12,31)):
+    df_dynamic = pd.DataFrame()
+    df_dynamic['start_date'] = [start_date, start_date]
+    df_dynamic['end_date'] = [end_date, end_date]
+    df_dynamic['y'] = [max_val + max_val*0.2, 0]
+    df_dynamic['start_date'] = df_dynamic['start_date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+    df_dynamic['end_date'] = df_dynamic['end_date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+    # print('Generated source for boundary lines')
+    # print(df_dynamic)
+    return df_dynamic
 
 def pre_process_total(data, location = None, df_elog_coor = None, window_size= 30, summary = False):
     if location is not None:
@@ -144,16 +152,12 @@ def pre_process_total(data, location = None, df_elog_coor = None, window_size= 3
         summary_df = pd.DataFrame()
         summary_df['average_consuption_day_liters']= [data['delta_total'].mean()]
         summary_df['number_outliers']  = [data['outlier'].sum()]
-
         summary_df['number_days'] = [data['number_days'].sum()]
         summary_df['average_outliers'] = [summary_df['number_outliers'][0]/summary_df['number_days'][0]]
         summary_df['Location'] = [location]
         summary_df['min_consuption_day_liters'] = [data['delta_total'].min()]
         summary_df['max_consuption_day_liters'] = [data['delta_total'].max()]
         summary_df = pd.merge(left = summary_df, right = df_elog_coor, on=['Location'])
-        
-        print('check summary in misc')
-        print(summary_df)
         return summary_df
 
     #create the table to show the summary per every user
