@@ -892,7 +892,8 @@ div_text3 = Div(text="<b>POWERED BY</b>",)
 
 
 # div2 = Div(text="<h1 style='color:#045a8d;font-family:verdana;font-size:100%;width=1000;display:inline;'>Interactive visualization of water consumption</h1>")
-image_layout = gridplot([[div_dummy_1, div_text1, div_text2, div_text3], [div_dummy_2, div1, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+# image_layout = gridplot([[div_dummy_1, div_text1, div_text2, div_text3], [div_dummy_2, div1, div2, div3]], plot_width=400, plot_height=400, toolbar_options={'logo': None, 'toolbar_location': None})
+image_layout = gridplot([[div_dummy_1, div_text1, div_text2, div_text3], [div_dummy_2, div1, div2, div3]], plot_width=400, plot_height=400)
 toolbar_layout = column([div_header_event_type, group])
 tools_layout = column([toolbar_layout, div_header_radius, text_input, button])
 
@@ -920,5 +921,6 @@ tab1 = Panel(child=col, title="Events")
 tab2 = Panel(child=tab2_final_layout, title="Usage")
 tab3 = Panel(child=get_water_balance_plot(plot=0), title="Water balance")
 tabs = Tabs(tabs=[ tab1, tab2, tab3 ])
-final_layout = gridplot([[tabs]], plot_width=2500, plot_height=650, toolbar_options={'logo': None, 'toolbar_location': None})
+#final_layout = gridplot([[tabs]], plot_width=2500, plot_height=650, toolbar_options={'logo': None, 'toolbar_location': None})
+final_layout = gridplot([[tabs]], plot_width=2500, plot_height=650)
 curdoc().add_root(final_layout)
