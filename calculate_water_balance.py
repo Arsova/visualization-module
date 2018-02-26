@@ -149,7 +149,7 @@ def get_water_balance_plot(plot=0):
         return p
 
     def update_stats(source):
-        text_box.text='In 2017 there was in total '+str(round(source['Loss'].sum()))+' million liters of non revenue water. \nThis is '+str(abs(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2)))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
+        text_box.text='In 2017 there was in total '+str(abs(round(source['Loss'].sum())))+' million liters of non revenue water. \nThis is '+str(abs(round(source['Loss'].sum()/source['TotalInflow'].sum()*100,2)))+'% of the total inflow. \nTotal inflow: '+str(round(source['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+str(round(source['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source['Households'].sum()))+' million liters.'
 
     def update_plot(attr, old, new):
         src_line, src_bar= get_dataset(level_select.value, axis_select.value, pattern_select.value)
@@ -195,7 +195,7 @@ def get_water_balance_plot(plot=0):
                                      ("Date", "@TimeStamp{%F %T}")
                                  ]), formatters={"TimeStamp": "datetime"})
     plot1.add_tools(hover)
-    text_box = PreText(text='In 2017 there was in total '+ str(round(source_bar.data['Loss'].sum(),0))+
+    text_box = PreText(text='In 2017 there was in total '+ str(abs(round(source_bar.data['Loss'].sum(),0)))+
     ' million liters of non revenue water. \nThis is '+ str(abs(round(source_bar.data['Loss'].sum()/source_bar.data['TotalInflow'].sum()*100,2)))+
     '% of the total inflow. \nTotal inflow: '+str(round(source_bar.data['TotalInflow'].sum()))+' million liters. \nTotal outflow: '+
     str(round(source_bar.data['TotalBooster'].sum()))+' million liters. \nTotal usage: '+str(round(source_bar.data['Households'].sum()))+
