@@ -13,4 +13,4 @@ To run the application,
 4. Navigate to directory where the project folder 'visualization-module' is located
 5. Run the following command: bokeh serve --show visualization-module
 
-Note: Steps 1, 2 and 3 only have to be done ones
+Note: Steps 1, 2 and 3 only have to be done once.
